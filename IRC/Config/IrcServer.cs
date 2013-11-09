@@ -4,7 +4,7 @@ using System.Xml.Serialization;
 namespace IRC.Config
 {
     [XmlRoot("Server")]
-    public class Server
+    public class IrcServer
     {
         public string Name {get;set;}
         public string Url { get; set; }

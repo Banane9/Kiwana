@@ -8,6 +8,6 @@ namespace IRC.Config
     {
         [XmlArray("Servers")]
         [XmlArrayItem("Server")]
-        public Collection<Server> Servers { get; set; }
+        public Collection<IrcServer> Servers { get; set; }
     }
 }
