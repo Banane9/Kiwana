@@ -6,13 +6,11 @@ namespace IRC.Config
     [XmlRoot("Server")]
     public class IrcServer
     {
-        public string Name {get;set;}
+        [XmlAttribute("Name")]
+        public string Name { get;set; }
+
         public string Url { get; set; }
         public int Port { get; set; }
         public User User { get; set; }
-
-        [XmlArray("Commands")]
-        [XmlArrayItem("Command")]
-        public Collection<string> Commands;
     }
 }

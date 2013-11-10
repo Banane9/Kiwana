@@ -1,32 +1,34 @@
 ﻿using IRC;
 using IRC.Config;
 using System;
+using System.IO;
 using System.Threading.Tasks;
+using System.Xml;
+using System.Xml.Serialization;
 
 namespace Bot
 {
     class Program
     {
-        static void Main(string[] args)
+        static void Main(string[] arg)
         {
-            IrcServer config = new IrcServer();
-            config.Port = 6667;
-            config.Url = "irc.esper.net";
+            XmlSerializer serializer = new XmlSerializer(typeof(BotConfig));
+            XmlReader reader = XmlReader.Create("BotConfig.xml");
+            BotConfig botConfig = (BotConfig)serializer.Deserialize(reader);
 
-            User user = new User();
-            user.Password = "iIzBestBot";
-            user.Name = "Kiwana";
-            user.Nick = "Kiwana";
+            //Console.WriteLine("Name: " + botConfig.Commands[0].Name);
+            //foreach (string alias in botConfig.Commands[0].Alias)
+            //{
+            //    Console.WriteLine("Alias: " + alias);
+            //}
 
-            config.User = user;
-
-            Client client = new Client(config);
+            Client client = new Client(botConfig);
 
             Task bot = Task.Run(() => { client.Work(); });
 
             while (!bot.IsCompleted)
             {
-                client.ParseLine("a b c :!" + Console.ReadLine());
+                client.ParseLine(Console.ReadLine(), true);
             }
         }
     }

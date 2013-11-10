@@ -1,0 +1,66 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<BotConfig>
+  <Server Name="IRC Server">
+    <Url>irc.server.net</Url>
+    <Port>6667</Port>
+    <User>
+      <Nick>Kiwana</Nick>
+      <Name>Kiwana</Name>
+      <Password>password</Password>
+    </User>
+  </Server>
+  <Commands>
+    <Command Name="quit" ConsoleServer="Both">
+      <Alias>die</Alias>
+      <Alias>q</Alias>
+      <Alias>d</Alias>
+    </Command>
+    <Command Name="say" ConsoleServer="Server">
+      <Alias>s</Alias>
+    </Command>
+    <Command Name="tell" ConsoleServer="Both">
+      <Alias>msg</Alias>
+      <Alias>message</Alias>
+      <Alias>m</Alias>
+      <Alias>t</Alias>
+    </Command>
+    <Command Name="part" ConsoleServer="Both">
+      <Alias>leave</Alias>
+      <Alias>l</Alias>
+      <Alias>p</Alias>
+    </Command>
+    <Command Name="join" ConsoleServer="Both">
+      <Alias>enter</Alias>
+      <Alias>e</Alias>
+      <Alias>j</Alias>
+    </Command>
+    <Command Name="nick" ConsoleServer="Both">
+      <Alias>n</Alias>
+    </Command>
+    <Command Name="raw" ConsoleServer="Both">
+      <Alias>r</Alias>
+    </Command>
+    <Command Name="letmegooglethatforyou" ConsoleServer="Server">
+      <Alias>lmgtfy</Alias>
+    </Command>
+    <Command Name="help" ConsoleServer="Both">
+      <Alias>h</Alias>
+    </Command>
+    <Command Name="about" ConsoleServer="Both">
+      <Alias>a</Alias>
+    </Command>
+  </Commands>
+  <Prefixes>
+    <Prefix>\!</Prefix>
+    <Prefix>\%</Prefix>
+    <Prefix>\§</Prefix>
+    <Prefix>\$</Prefix>
+    <Prefix>\^</Prefix>
+    <Prefix>&amp;</Prefix>
+    <Prefix>\?</Prefix>
+  </Prefixes>
+  <Users>
+    <User>Banane9</User>
+  </Users>
+  <About>I'm Banane9's C# Bot. Use the help command to find out what commands I support.</About>
+</BotConfig>

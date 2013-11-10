@@ -41,6 +41,8 @@
   <ItemGroup>
     <Compile Include="Client.cs" />
     <Compile Include="Config\BotConfig.cs" />
+    <Compile Include="Config\Command.cs" />
+    <Compile Include="Config\ConsoleServer.cs" />
     <Compile Include="Config\IrcServer.cs" />
     <Compile Include="Config\User.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
