@@ -21,9 +21,12 @@ namespace IRC
         private Regex _prefixRegex;
         private Regex _serverCommandRegex;
         private Regex _consoleCommandRegex;
-        private Regex _nameRegex = new Regex(@"(?<=\:)[\w|_\+\^\<\>\[\]]+(?=\!)");
+        private Regex _nickRegex = new Regex(@"(?<=\:).+(?=\!)");
+        private Regex _nameRegex = new Regex(@"(?<=!|!~)[^~].+(?=@)");
         private Regex _motdRegex = new Regex(@"(?<=\:).+");
         private Regex _messageRegex = new Regex(@"(?<=\:).+");
+
+        private Random random = new Random();
 
         private bool _shouldRun = true;
 
@@ -148,9 +151,10 @@ namespace IRC
                 //Print input from server
                 if (!console)
                 {
-                    if (_nameRegex.IsMatch(ex[0]))
+                    //Console.WriteLine(_joinStringArray(ex, " "));
+                    if (_nickRegex.IsMatch(ex[0]))
                     {
-                        Console.WriteLine(ex[2] /*+ " " + ex[1]*/ + " <" + _nameRegex.Match(ex[0]) + "> " + _messageRegex.Match(ex[3]) + " " + _joinStringArray(ex, " ", 4));
+                        Console.WriteLine(ex[2] /*+ " " + ex[1]*/ + " <" + _nickRegex.Match(ex[0]) + "!" + _nameRegex.Match(ex[0]) + "> " + _messageRegex.Match(ex[3]) + " " + _joinStringArray(ex, " ", 4));
                     }
                     else if (_motdRegex.IsMatch(ex[3]))
                     {
@@ -170,18 +174,15 @@ namespace IRC
                 if ((_consoleCommandRegex.IsMatch(command) && console) || (_serverCommandRegex.IsMatch(command) && !console))
                 {
                     string normalizedCommand = "";
-                    Console.WriteLine("Checking [" + command + "] with:");
                     foreach (Command commandToCheck in _config.Commands)
                     {
-                        Console.WriteLine(commandToCheck.Name);
                         if (command == commandToCheck.Name)
                         {
                             normalizedCommand = command;
                             break;
                         }
 
-                        string regexString = "^" + _joinStringArray(commandToCheck.Alias, "$|^") + "$";
-                        Console.WriteLine(" " + regexString);
+                        string regexString = "^(" + _joinStringArray(commandToCheck.Alias, "|") + ")$";
 
                         if (!String.IsNullOrEmpty(regexString))
                         {
@@ -194,7 +195,11 @@ namespace IRC
                             if (!String.IsNullOrEmpty(normalizedCommand)) break;
                         }
                     }
-                    Console.WriteLine("Match: " + normalizedCommand);
+
+                    if (ex[2] == _config.Server.User.Nick)
+                    {
+                        ex[2] = _nickRegex.Match(ex[0]).Value;
+                    }
 
                     //Commands with arguments
                     if (ex.Count > 4)
@@ -202,13 +207,13 @@ namespace IRC
                         switch (normalizedCommand)
                         {
                             case "join":
-                                if (_canDoCommand(_nameRegex.Match(ex[0]).Value) || console)
+                                if (_canDoCommand(_nickRegex.Match(ex[0]).Value) || console)
                                 {
                                     SendData("JOIN", _joinStringArray(ex, ",", 4));
                                 }
                                 else
                                 {
-                                    SendData("PRIVMSG", ex[2] + " :" + _nameRegex.Match(ex[0]) + ": You don't have permission to do this.");
+                                    SendData("PRIVMSG", ex[2] + " :" + _nickRegex.Match(ex[0]) + ": You don't have permission to do this.");
                                 }
                                 break;
                             case "about":
@@ -226,61 +231,128 @@ namespace IRC
                             case "letmegooglethatforyou":
                                 SendData("PRIVMSG", ex[2] + " :http://lmgtfy.com/?q=" + _joinStringArray(ex, "+", 4));
                                 break;
+                            case "random":
+                                try
+                                {
+                                    SendData("PRIVMSG", ex[2] + " :" + _nickRegex.Match(ex[0]) + ": " + random.Next(int.Parse(Regex.Match(ex[4], @"\d+").Value), int.Parse(Regex.Match(ex[5], @"\d+").Value)));
+                                }
+                                catch
+                                {
+                                    SendData("PRIVMSG", ex[2] + " :" + _nickRegex.Match(ex[0]) + ": Couldn't parse numbers.");
+                                }
+                                break;
+                            case "dice":
+                                try
+                                {
+                                    int value = 0;
+                                    string nextMode = "+";
+
+                                    if (Regex.IsMatch(_joinStringArray(ex, start: 4), @"\d+((-|\+)\d+)?d\d+(-|\+)?"))
+                                    {
+                                        MatchCollection diceFormulas = Regex.Matches(_joinStringArray(ex, start: 4), @"\d+((-|\+)\d+)?d\d+(-|\+)?");
+                                        foreach (Match diceFormula in diceFormulas)
+                                        {
+                                            Console.WriteLine(diceFormula.Value);
+
+                                            int diceValue = 0;
+
+                                            int dice = int.Parse(Regex.Match(diceFormula.Value, @"^\d+").Value);
+
+                                            int add = 0;
+                                            if (Regex.IsMatch(ex[4], @"(-|\+)\d+(?=d)"))
+                                            {
+                                                add = int.Parse(Regex.Match(diceFormula.Value, @"(-|\+)\d+(?=d)").Value);
+                                            }
+
+                                            int max = int.Parse(Regex.Match(diceFormula.Value, @"(?<=d)\d+").Value);
+
+                                            for (int i = 0; i < dice; i++)
+                                            {
+                                                diceValue += random.Next(1, max);
+                                            }
+
+                                            diceValue += add;
+
+                                            switch (nextMode)
+                                            {
+                                                case "+":
+                                                    value += diceValue;
+                                                    break;
+                                                case "-":
+                                                    value -= diceValue;
+                                                    break;
+                                            }
+
+                                            nextMode = Regex.Match(diceFormula.Value, @"(-|\+)$").Value;
+                                        }
+
+                                        SendData("PRIVMSG", ex[2] + " :" + _nickRegex.Match(ex[0]) + ": " + value);
+                                    }
+                                    else
+                                    {
+                                        SendData("PRIVMSG", ex[2] + " :" + _nickRegex.Match(ex[0]) + ": No valid dice formula found.");
+                                    }
+                                }
+                                catch
+                                {
+                                    SendData("PRIVMSG", ex[2] + " :" + _nickRegex.Match(ex[0]) + ": Couldn't parse dice formula.");
+                                }
+                                break;
                             case "tell":
-                                if (_canDoCommand(_nameRegex.Match(ex[0]).Value) || console)
+                                if (_canDoCommand(_nickRegex.Match(ex[0]).Value) || console)
                                 {
                                     SendData("PRIVMSG", ex[4] + " :" + _joinStringArray(ex, " ", 5));
                                 }
                                 else
                                 {
-                                    SendData("PRIVMSG", ex[2] + " :" + _nameRegex.Match(ex[0]) + ": You don't have permission to do this.");
+                                    SendData("PRIVMSG", ex[2] + " :" + _nickRegex.Match(ex[0]) + ": You don't have permission to do this.");
                                 }
                                 break;
                             case "nick":
-                                if (_canDoCommand(_nameRegex.Match(ex[0]).Value) || console)
+                                if (_canDoCommand(_nickRegex.Match(ex[0]).Value) || console)
                                 {
                                     SendData("NICK", _joinStringArray(ex, "_", 4));
                                     _config.Server.User.Nick = _joinStringArray(ex, "_", 4);
                                 }
                                 else
                                 {
-                                    SendData("PRIVMSG", ex[2] + " :" + _nameRegex.Match(ex[0]) + ": You don't have permission to do this.");
+                                    SendData("PRIVMSG", ex[2] + " :" + _nickRegex.Match(ex[0]) + ": You don't have permission to do this.");
                                 }
                                 break;
                             case "raw":
-                                if (_canDoCommand(_nameRegex.Match(ex[0]).Value) || console)
+                                if (_canDoCommand(_nickRegex.Match(ex[0]).Value) || console)
                                 {
                                     _shouldRun = ex[4].ToUpper() != "QUIT";
                                     SendData(_joinStringArray(ex, " ", 4));
                                 }
                                 else
                                 {
-                                    SendData("PRIVMSG", ex[2] + " :" + _nameRegex.Match(ex[0]) + ": You don't have permission to do this.");
+                                    SendData("PRIVMSG", ex[2] + " :" + _nickRegex.Match(ex[0]) + ": You don't have permission to do this.");
                                 }
                                 break;
                             case "part":
-                                if (_canDoCommand(_nameRegex.Match(ex[0]).Value) || console)
+                                if (_canDoCommand(_nickRegex.Match(ex[0]).Value) || console)
                                 {
                                     SendData("PART", _joinStringArray(ex, ",", 4));
                                 }
                                 else
                                 {
-                                    SendData("PRIVMSG", ex[2] + " :" + _nameRegex.Match(ex[0]) + ": You don't have permission to do this.");
+                                    SendData("PRIVMSG", ex[2] + " :" + _nickRegex.Match(ex[0]) + ": You don't have permission to do this.");
                                 }
                                 break;
                             case "quit":
-                                if (_canDoCommand(_nameRegex.Match(ex[0]).Value) || console)
+                                if (_canDoCommand(_nickRegex.Match(ex[0]).Value) || console)
                                 {
                                     SendData("QUIT", ":" + _joinStringArray(ex, " ", 4));
                                     _shouldRun = false;
                                 }
                                 else
                                 {
-                                    SendData("PRIVMSG", ex[2] + " :" + _nameRegex.Match(ex[0]) + ": You don't have permission to do this.");
+                                    SendData("PRIVMSG", ex[2] + " :" + _nickRegex.Match(ex[0]) + ": You don't have permission to do this.");
                                 }
                                 break;
                             default:
-                                SendData("PRIVMSG", ex[2] + " :" + _nameRegex.Match(ex[0]) + ": Command not recognized.");
+                                SendData("PRIVMSG", ex[2] + " :" + _nickRegex.Match(ex[0]) + ": Command not recognized.");
                                 break;
                         }
                     }
@@ -297,25 +369,28 @@ namespace IRC
                                 help += " . With prefixes: " + _joinStringArray(_config.Prefixes, ", ") + " .";
                                 SendData("PRIVMSG", ex[2] + " :" + help.Replace("\\", ""));
                                 break;
+                            case "tosscoin":
+                                SendData("PRIVMSG", ex[2] + " :" + _nickRegex.Match(ex[0]) + ": " + (random.Next(1, 3) == 1 ? "Tails" : "Heads"));
+                                break;
                             case "part":
-                                if (_canDoCommand(_nameRegex.Match(ex[0]).Value) || console)
+                                if (_canDoCommand(_nickRegex.Match(ex[0]).Value) || console)
                                 {
                                     SendData("PART", ex[2]);
                                 }
                                 else
                                 {
-                                    SendData("PRIVMSG", ex[2] + " :" + _nameRegex.Match(ex[0]) + ": You don't have permission to do this.");
+                                    SendData("PRIVMSG", ex[2] + " :" + _nickRegex.Match(ex[0]) + ": You don't have permission to do this.");
                                 }
                                 break;
                             case "quit":
-                                if (_canDoCommand(_nameRegex.Match(ex[0]).Value) || console)
+                                if (_canDoCommand(_nickRegex.Match(ex[0]).Value) || console)
                                 {
                                     SendData("QUIT");
                                     _shouldRun = false;
                                 }
                                 else
                                 {
-                                    SendData("PRIVMSG", ex[2] + " :" + _nameRegex.Match(ex[0]) + ": You don't have permission to do this.");
+                                    SendData("PRIVMSG", ex[2] + " :" + _nickRegex.Match(ex[0]) + ": You don't have permission to do this.");
                                 }
                                 break;
                         }
@@ -345,9 +420,16 @@ namespace IRC
         {
             SendData("PRIVMSG", "NickServ :ACC " + name);
             List<string> ex = _streamReader.ReadLine().Split(' ').ToList();
-            if (ex.Count == 6)
+            if (ex.Count == 6 && _nickRegex.Match(ex[0]).Value == "NickServ")
             {
-                return int.Parse(ex[5]);
+                try
+                {
+                    return int.Parse(ex[5]);
+                }
+                catch
+                {
+                    return 0;
+                }
             }
             else
             {

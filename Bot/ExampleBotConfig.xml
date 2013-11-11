@@ -49,6 +49,16 @@
     <Command Name="about" ConsoleServer="Both">
       <Alias>a</Alias>
     </Command>
+    <Command Name="random" ConsoleServer="Server">
+      <Alias>rand</Alias>
+    </Command>
+    <Command Name="tosscoin" ConsoleServer="Server">
+      <Alias>toss</Alias>
+      <Alias>coin</Alias>
+    </Command>
+    <Command Name="dice" ConsoleServer="Server">
+      <Alias>hexahedron</Alias>
+    </Command>
   </Commands>
   <Prefixes>
     <Prefix>\!</Prefix>
