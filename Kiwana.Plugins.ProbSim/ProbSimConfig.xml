@@ -1,6 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8" ?>
 <PluginConfig>
-  <ClassName>Kiwana.Plugins.Random.Random</ClassName>
+  <ClassName>Kiwana.Plugins.ProbSim.ProbSim</ClassName>
   <Commands>
     <Command Name="random" ConsoleServer="Server">
       <Alias>rand</Alias>

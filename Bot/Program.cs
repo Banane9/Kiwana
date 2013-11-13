@@ -20,15 +20,13 @@ namespace Kiwana
 
             List<Plugin> plugins = PluginManager.ScanPluginFolder("Plugins");
 
-            Console.WriteLine(plugins[0].Instance.GetRandom(1, 10));
-
             //Console.WriteLine("Name: " + botConfig.Commands[0].Name);
             //foreach (string alias in botConfig.Commands[0].Alias)
             //{
             //    Console.WriteLine("Alias: " + alias);
             //}
 
-            Client client = new Client(botConfig);
+            Client client = new Client(botConfig, plugins);
 
             Task bot = Task.Run(() => { client.Work(); });
 

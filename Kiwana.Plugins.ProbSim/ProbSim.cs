@@ -9,13 +9,14 @@ namespace Kiwana.Plugins.ProbSim
     {
         private Random _random = new Random();
 
-        public void HandleLine(List<string> ex, bool userAuthenticated, bool console, SendData SendData)
+        public override void HandleLine(List<string> ex, bool userAuthenticated, bool console, SendDataEventHandler SendData)
         {
+            Console.WriteLine(Util.JoinStringList(ex, " "));
             if (ex.Count > 4)
             {
                 switch (ex[3])
                 {
-                    case "random":
+                    case ":random":
                         try
                         {
                             SendData("PRIVMSG", ex[2] + " :" + Util.NickRegex.Match(ex[0]) + ": " + _random.Next(int.Parse(Regex.Match(ex[4], @"\d+").Value), int.Parse(Regex.Match(ex[5], @"\d+").Value)));
@@ -25,7 +26,7 @@ namespace Kiwana.Plugins.ProbSim
                             SendData("PRIVMSG", ex[2] + " :" + Util.NickRegex.Match(ex[0]) + ": Couldn't parse numbers.");
                         }
                         break;
-                    case "dice":
+                    case ":dice":
                         try
                         {
                             int value = 0;
@@ -81,6 +82,15 @@ namespace Kiwana.Plugins.ProbSim
                         {
                             SendData("PRIVMSG", ex[2] + " :" + Util.NickRegex.Match(ex[0]) + ": Couldn't parse dice formula.");
                         }
+                        break;
+                }
+            }
+            else if (ex.Count > 3)
+            {
+                switch (ex[3])
+                {
+                    case ":tosscoin":
+                        SendData("PRIVMSG", ex[2] + " :" + Util.NickRegex.Match(ex[0]) + ": " + (_random.Next(1, 3) == 1 ? "Tails" : "Heads"));
                         break;
                 }
             }

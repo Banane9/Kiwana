@@ -8,6 +8,6 @@ namespace Kiwana.Core.Plugins
 
         public PluginConfig Config { get; set; }
 
-        public dynamic Instance { get; set; }
+        public Kiwana.Plugins.Api.Plugin Instance { get; set; }
     }
 }

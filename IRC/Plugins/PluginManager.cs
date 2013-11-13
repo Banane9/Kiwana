@@ -32,7 +32,7 @@ namespace Kiwana.Core.Plugins
                 plugin.Config = (PluginConfig)_pluginConfigSerializer.Deserialize(reader);
 
                 Assembly dll = Assembly.LoadFile(Path.GetFullPath(pluginPath));
-                plugin.Instance = Activator.CreateInstance(dll.GetType(plugin.Config.ClassName));
+                plugin.Instance = (Kiwana.Plugins.Api.Plugin)Activator.CreateInstance(dll.GetType(plugin.Config.ClassName));
 
                 plugins.Add(plugin);
             }

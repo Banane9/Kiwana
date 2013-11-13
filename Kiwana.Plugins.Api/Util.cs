@@ -38,9 +38,9 @@ namespace Kiwana.Plugins.Api
 
             int _end = end == 0 ? strings.Count : (int)end;
 
-            for (int i = (int)start; i < end; i++)
+            for (int i = (int)start; i < _end; i++)
             {
-                if (i < end && i > start)
+                if (i < _end && i > start)
                 { str += glue; }
 
                 str += strings[i];
