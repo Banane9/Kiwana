@@ -1,4 +1,5 @@
-﻿using IRC.Config;
+﻿using IRC.Commands;
+using IRC.Config;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -372,6 +373,10 @@ namespace IRC
                             case "tosscoin":
                                 SendData("PRIVMSG", ex[2] + " :" + _nickRegex.Match(ex[0]) + ": " + (random.Next(1, 3) == 1 ? "Tails" : "Heads"));
                                 break;
+                            case "mcstatus":
+                                SendData("PRIVMSG", ex[2] + " :Retrieving status of Minecraft services...");
+                                _writeMcStatus(ex[2]);
+                                break;
                             case "part":
                                 if (_canDoCommand(_nickRegex.Match(ex[0]).Value) || console)
                                 {
@@ -396,6 +401,16 @@ namespace IRC
                         }
                     }
                 }
+            }
+        }
+
+        private async void _writeMcStatus(string who)
+        {
+            Dictionary<string, string> mcStatus = await McStatus.GetMcStatus();
+
+            foreach (string key in mcStatus.Keys.ToList())
+            {
+                SendData("PRIVMSG", who + " :" + McStatus.SericeNames[key] + ": " + McStatus.StatusMessages[mcStatus[key]]);
             }
         }
 
