@@ -7,8 +7,8 @@
     <ProjectGuid>{BBB30695-FE77-4448-956A-AEDEA14D3D3F}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>IRC</RootNamespace>
-    <AssemblyName>IRC</AssemblyName>
+    <RootNamespace>Kiwana.Core</RootNamespace>
+    <AssemblyName>Kiwana.Core</AssemblyName>
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
   </PropertyGroup>

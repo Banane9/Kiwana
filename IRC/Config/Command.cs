@@ -2,7 +2,7 @@
 using System.Text.RegularExpressions;
 using System.Xml.Serialization;
 
-namespace IRC.Config
+namespace Kiwana.Core.Config
 {
     [XmlRoot("Command")]
     public class Command

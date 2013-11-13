@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Xml.Serialization;
 
-namespace IRC.Config
+namespace Kiwana.Core.Config
 {
     [XmlRoot("BotConfig")]
     public class BotConfig

@@ -7,8 +7,8 @@
     <ProjectGuid>{384F39AD-3A81-4612-882B-5901CF02C187}</ProjectGuid>
     <OutputType>Exe</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>Bot</RootNamespace>
-    <AssemblyName>Bot</AssemblyName>
+    <RootNamespace>Kiwana</RootNamespace>
+    <AssemblyName>Kiwana</AssemblyName>
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
   </PropertyGroup>
@@ -57,9 +57,9 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\IRC\IRC.csproj">
+    <ProjectReference Include="..\IRC\Kiwana.Core.csproj">
       <Project>{bbb30695-fe77-4448-956a-aedea14d3d3f}</Project>
-      <Name>IRC</Name>
+      <Name>Kiwana.Core</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>

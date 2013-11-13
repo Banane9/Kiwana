@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace IRC.Objects
+namespace Kiwana.Core.Objects
 {
     public class User
     {

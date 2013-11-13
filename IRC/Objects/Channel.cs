@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 
-namespace IRC.Objects
+namespace Kiwana.Core.Objects
 {
     public class Channel
     {

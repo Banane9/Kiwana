@@ -3,12 +3,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace Kiwana.Core.Config
+namespace Kiwana.Plugins.Random
 {
-    public enum ConsoleServer
+    public class Class1
     {
-        Console,
-        Server,
-        Both
     }
 }

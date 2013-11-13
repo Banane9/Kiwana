@@ -1,6 +1,6 @@
 ﻿using System.Xml.Serialization;
 
-namespace IRC.Config
+namespace Kiwana.Core.Config
 {
     [XmlRoot("User")]
     public class User

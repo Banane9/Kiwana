@@ -1,15 +1,14 @@
-﻿using IRC.Commands;
-using IRC.Config;
+﻿using Kiwana.Core.Commands;
+using Kiwana.Core.Config;
+using Kiwana.Core.Objects;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net.Sockets;
-using System.Text;
 using System.Text.RegularExpressions;
-using System.Threading.Tasks;
 
-namespace IRC
+namespace Kiwana.Core
 {
     public class Client
     {
@@ -18,6 +17,8 @@ namespace IRC
         private NetworkStream _networkStream;
         private StreamReader _streamReader;
         private StreamWriter _streamWriter;
+
+        public List<Channel> Channels { get; set; }
 
         private Regex _prefixRegex;
         private Regex _serverCommandRegex;

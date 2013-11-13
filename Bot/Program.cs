@@ -1,12 +1,12 @@
-﻿using IRC;
-using IRC.Config;
+﻿using Kiwana.Core;
+using Kiwana.Core.Config;
 using System;
 using System.IO;
 using System.Threading.Tasks;
 using System.Xml;
 using System.Xml.Serialization;
 
-namespace Bot
+namespace Kiwana
 {
     class Program
     {
