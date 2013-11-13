@@ -1,17 +1,15 @@
-﻿using System;
+﻿using Kiwana.Plugins.Api;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 
 namespace Kiwana.Plugins.Random
 {
-    public class Random
+    public class Random : Plugin
     {
         private System.Random _random = new System.Random();
 
-        public int GetRandom(int min, int max)
+        public void HandleLine(List<string> ex, bool userAuthenticated, bool console)
         {
-            return _random.Next(min, max);
+
         }
     }
 }

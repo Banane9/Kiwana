@@ -1,6 +1,7 @@
 ﻿using Kiwana.Core.Commands;
 using Kiwana.Core.Config;
 using Kiwana.Core.Objects;
+using Kiwana.Plugins.Api;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -23,10 +24,6 @@ namespace Kiwana.Core
         private Regex _prefixRegex;
         private Regex _serverCommandRegex;
         private Regex _consoleCommandRegex;
-        private Regex _nickRegex = new Regex(@"(?<=\:).+(?=\!)");
-        private Regex _nameRegex = new Regex(@"(?<=!|!~)[^~].+(?=@)");
-        private Regex _motdRegex = new Regex(@"(?<=\:).+");
-        private Regex _messageRegex = new Regex(@"(?<=\:).+");
 
         private Random random = new Random();
 
@@ -36,7 +33,7 @@ namespace Kiwana.Core
         {
             _config = config;
 
-            _prefixRegex = new Regex(@"(?<=" + _joinStringArray(_config.Prefixes, "|") + ").+");
+            _prefixRegex = new Regex(@"(?<=" + Util.JoinStringList(_config.Prefixes, "|") + ").+");
 
             string serverCommandRegex = @"";
             string consoleCommandRegex = @"";
@@ -47,7 +44,7 @@ namespace Kiwana.Core
                 if (command.ConsoleServer == ConsoleServer.Server || command.ConsoleServer == ConsoleServer.Both)
                 {
                     serverCommandRegex += command.Name + "|";
-                    string alias = _joinStringArray(command.Alias, "|");
+                    string alias = Util.JoinStringList(command.Alias, "|");
                     if (!String.IsNullOrEmpty(alias))
                     {
                         serverCommandRegex += alias;
@@ -61,7 +58,7 @@ namespace Kiwana.Core
                 if (command.ConsoleServer == ConsoleServer.Console || command.ConsoleServer == ConsoleServer.Both)
                 {
                     consoleCommandRegex += command.Name + "|";
-                    string alias = _joinStringArray(command.Alias, "|");
+                    string alias = Util.JoinStringList(command.Alias, "|");
                     if (!String.IsNullOrEmpty(alias))
                     {
                         consoleCommandRegex += alias;
@@ -153,22 +150,22 @@ namespace Kiwana.Core
                 //Print input from server
                 if (!console)
                 {
-                    //Console.WriteLine(_joinStringArray(ex, " "));
-                    if (_nickRegex.IsMatch(ex[0]))
+                    //Console.WriteLine(Util.JoinStringList(ex, " "));
+                    if (Util.NickRegex.IsMatch(ex[0]))
                     {
-                        Console.WriteLine(ex[2] /*+ " " + ex[1]*/ + " <" + _nickRegex.Match(ex[0]) + "!" + _nameRegex.Match(ex[0]) + "> " + _messageRegex.Match(ex[3]) + " " + _joinStringArray(ex, " ", 4));
+                        Console.WriteLine(ex[2] /*+ " " + ex[1]*/ + " <" + Util.NickRegex.Match(ex[0]) + "!" + Util.NameRegex.Match(ex[0]) + "> " + Util.MessageRegex.Match(ex[3]) + " " + Util.JoinStringList(ex, " ", 4));
                     }
-                    else if (_motdRegex.IsMatch(ex[3]))
+                    else if (Util.MessageRegex.IsMatch(ex[3]))
                     {
-                        Console.WriteLine(_motdRegex.Match(ex[3]) + " " + _joinStringArray(ex, " ", 4));
+                        Console.WriteLine(Util.MessageRegex.Match(ex[3]) + " " + Util.JoinStringList(ex, " ", 4));
                     }
-                    else if (_messageRegex.IsMatch(_joinStringArray(ex, " ", 4)))
+                    else if (Util.MessageRegex.IsMatch(Util.JoinStringList(ex, " ", 4)))
                     {
-                        Console.WriteLine(_messageRegex.Match(_joinStringArray(ex, " ", 4)));
+                        Console.WriteLine(Util.MessageRegex.Match(Util.JoinStringList(ex, " ", 4)));
                     }
                     else
                     {
-                        Console.WriteLine(_joinStringArray(ex, " "));
+                        Console.WriteLine(Util.JoinStringList(ex, " "));
                     }
                 }
 
@@ -184,7 +181,7 @@ namespace Kiwana.Core
                             break;
                         }
 
-                        string regexString = "^(" + _joinStringArray(commandToCheck.Alias, "|") + ")$";
+                        string regexString = "^(" + Util.JoinStringList(commandToCheck.Alias, "|") + ")$";
 
                         if (!String.IsNullOrEmpty(regexString))
                         {
@@ -200,7 +197,7 @@ namespace Kiwana.Core
 
                     if (ex[2] == _config.Server.User.Nick)
                     {
-                        ex[2] = _nickRegex.Match(ex[0]).Value;
+                        ex[2] = Util.NickRegex.Match(ex[0]).Value;
                     }
 
                     //Commands with arguments
@@ -209,13 +206,13 @@ namespace Kiwana.Core
                         switch (normalizedCommand)
                         {
                             case "join":
-                                if (_canDoCommand(_nickRegex.Match(ex[0]).Value) || console)
+                                if (_canDoCommand(Util.NickRegex.Match(ex[0]).Value) || console)
                                 {
-                                    SendData("JOIN", _joinStringArray(ex, ",", 4));
+                                    SendData("JOIN", Util.JoinStringList(ex, ",", 4));
                                 }
                                 else
                                 {
-                                    SendData("PRIVMSG", ex[2] + " :" + _nickRegex.Match(ex[0]) + ": You don't have permission to do this.");
+                                    SendData("PRIVMSG", ex[2] + " :" + Util.NickRegex.Match(ex[0]) + ": You don't have permission to do this.");
                                 }
                                 break;
                             case "about":
@@ -223,138 +220,71 @@ namespace Kiwana.Core
                                 break;
                             case "help":
                                 string help = "Available commands are: ";
-                                help += _joinStringArray(_config.Commands.Where(cmd => cmd.ConsoleServer == (console ? ConsoleServer.Console : ConsoleServer.Server) || cmd.ConsoleServer == ConsoleServer.Both).Select(cmd => cmd.Name).ToList(), ", ");
-                                help += " . With prefixes: " + _joinStringArray(_config.Prefixes, ", ") + " .";
+                                help += Util.JoinStringList(_config.Commands.Where(cmd => cmd.ConsoleServer == (console ? ConsoleServer.Console : ConsoleServer.Server) || cmd.ConsoleServer == ConsoleServer.Both).Select(cmd => cmd.Name).ToList(), ", ");
+                                help += " . With prefixes: " + Util.JoinStringList(_config.Prefixes, ", ") + " .";
                                 SendData("PRIVMSG", ex[2] + " :" + help.Replace("\\", ""));
                                 break;
                             case "say":
-                                SendData("PRIVMSG", ex[2] + " :" + _joinStringArray(ex, " ", 4)); //channel + *space*: + message
+                                SendData("PRIVMSG", ex[2] + " :" + Util.JoinStringList(ex, " ", 4)); //channel + *space*: + message
                                 break;
                             case "letmegooglethatforyou":
-                                SendData("PRIVMSG", ex[2] + " :http://lmgtfy.com/?q=" + _joinStringArray(ex, "+", 4));
-                                break;
-                            case "random":
-                                try
-                                {
-                                    SendData("PRIVMSG", ex[2] + " :" + _nickRegex.Match(ex[0]) + ": " + random.Next(int.Parse(Regex.Match(ex[4], @"\d+").Value), int.Parse(Regex.Match(ex[5], @"\d+").Value)));
-                                }
-                                catch
-                                {
-                                    SendData("PRIVMSG", ex[2] + " :" + _nickRegex.Match(ex[0]) + ": Couldn't parse numbers.");
-                                }
-                                break;
-                            case "dice":
-                                try
-                                {
-                                    int value = 0;
-                                    string nextMode = "+";
-
-                                    if (Regex.IsMatch(_joinStringArray(ex, start: 4), @"\d+((-|\+)\d+)?d\d+(-|\+)?"))
-                                    {
-                                        MatchCollection diceFormulas = Regex.Matches(_joinStringArray(ex, start: 4), @"\d+((-|\+)\d+)?d\d+(-|\+)?");
-                                        foreach (Match diceFormula in diceFormulas)
-                                        {
-                                            Console.WriteLine(diceFormula.Value);
-
-                                            int diceValue = 0;
-
-                                            int dice = int.Parse(Regex.Match(diceFormula.Value, @"^\d+").Value);
-
-                                            int add = 0;
-                                            if (Regex.IsMatch(ex[4], @"(-|\+)\d+(?=d)"))
-                                            {
-                                                add = int.Parse(Regex.Match(diceFormula.Value, @"(-|\+)\d+(?=d)").Value);
-                                            }
-
-                                            int max = int.Parse(Regex.Match(diceFormula.Value, @"(?<=d)\d+").Value);
-
-                                            for (int i = 0; i < dice; i++)
-                                            {
-                                                diceValue += random.Next(1, max);
-                                            }
-
-                                            diceValue += add;
-
-                                            switch (nextMode)
-                                            {
-                                                case "+":
-                                                    value += diceValue;
-                                                    break;
-                                                case "-":
-                                                    value -= diceValue;
-                                                    break;
-                                            }
-
-                                            nextMode = Regex.Match(diceFormula.Value, @"(-|\+)$").Value;
-                                        }
-
-                                        SendData("PRIVMSG", ex[2] + " :" + _nickRegex.Match(ex[0]) + ": " + value);
-                                    }
-                                    else
-                                    {
-                                        SendData("PRIVMSG", ex[2] + " :" + _nickRegex.Match(ex[0]) + ": No valid dice formula found.");
-                                    }
-                                }
-                                catch
-                                {
-                                    SendData("PRIVMSG", ex[2] + " :" + _nickRegex.Match(ex[0]) + ": Couldn't parse dice formula.");
-                                }
+                                SendData("PRIVMSG", ex[2] + " :http://lmgtfy.com/?q=" + Util.JoinStringList(ex, "+", 4));
                                 break;
                             case "tell":
-                                if (_canDoCommand(_nickRegex.Match(ex[0]).Value) || console)
+                                if (_canDoCommand(Util.NickRegex.Match(ex[0]).Value) || console)
                                 {
-                                    SendData("PRIVMSG", ex[4] + " :" + _joinStringArray(ex, " ", 5));
+                                    SendData("PRIVMSG", ex[4] + " :" + Util.JoinStringList(ex, " ", 5));
                                 }
                                 else
                                 {
-                                    SendData("PRIVMSG", ex[2] + " :" + _nickRegex.Match(ex[0]) + ": You don't have permission to do this.");
+                                    SendData("PRIVMSG", ex[2] + " :" + Util.NickRegex.Match(ex[0]) + ": You don't have permission to do this.");
                                 }
                                 break;
                             case "nick":
-                                if (_canDoCommand(_nickRegex.Match(ex[0]).Value) || console)
+                                if (_canDoCommand(Util.NickRegex.Match(ex[0]).Value) || console)
                                 {
-                                    SendData("NICK", _joinStringArray(ex, "_", 4));
-                                    _config.Server.User.Nick = _joinStringArray(ex, "_", 4);
+                                    SendData("NICK", Util.JoinStringList(ex, "_", 4));
+                                    _config.Server.User.Nick = Util.JoinStringList(ex, "_", 4);
                                 }
                                 else
                                 {
-                                    SendData("PRIVMSG", ex[2] + " :" + _nickRegex.Match(ex[0]) + ": You don't have permission to do this.");
+                                    SendData("PRIVMSG", ex[2] + " :" + Util.NickRegex.Match(ex[0]) + ": You don't have permission to do this.");
                                 }
                                 break;
                             case "raw":
-                                if (_canDoCommand(_nickRegex.Match(ex[0]).Value) || console)
+                                if (_canDoCommand(Util.NickRegex.Match(ex[0]).Value) || console)
                                 {
                                     _shouldRun = ex[4].ToUpper() != "QUIT";
-                                    SendData(_joinStringArray(ex, " ", 4));
+                                    SendData(Util.JoinStringList(ex, " ", 4));
                                 }
                                 else
                                 {
-                                    SendData("PRIVMSG", ex[2] + " :" + _nickRegex.Match(ex[0]) + ": You don't have permission to do this.");
+                                    SendData("PRIVMSG", ex[2] + " :" + Util.NickRegex.Match(ex[0]) + ": You don't have permission to do this.");
                                 }
                                 break;
                             case "part":
-                                if (_canDoCommand(_nickRegex.Match(ex[0]).Value) || console)
+                                if (_canDoCommand(Util.NickRegex.Match(ex[0]).Value) || console)
                                 {
-                                    SendData("PART", _joinStringArray(ex, ",", 4));
+                                    SendData("PART", Util.JoinStringList(ex, ",", 4));
                                 }
                                 else
                                 {
-                                    SendData("PRIVMSG", ex[2] + " :" + _nickRegex.Match(ex[0]) + ": You don't have permission to do this.");
+                                    SendData("PRIVMSG", ex[2] + " :" + Util.NickRegex.Match(ex[0]) + ": You don't have permission to do this.");
                                 }
                                 break;
                             case "quit":
-                                if (_canDoCommand(_nickRegex.Match(ex[0]).Value) || console)
+                                if (_canDoCommand(Util.NickRegex.Match(ex[0]).Value) || console)
                                 {
-                                    SendData("QUIT", ":" + _joinStringArray(ex, " ", 4));
+                                    SendData("QUIT", ":" + Util.JoinStringList(ex, " ", 4));
                                     _shouldRun = false;
                                 }
                                 else
                                 {
-                                    SendData("PRIVMSG", ex[2] + " :" + _nickRegex.Match(ex[0]) + ": You don't have permission to do this.");
+                                    SendData("PRIVMSG", ex[2] + " :" + Util.NickRegex.Match(ex[0]) + ": You don't have permission to do this.");
                                 }
                                 break;
                             default:
-                                SendData("PRIVMSG", ex[2] + " :" + _nickRegex.Match(ex[0]) + ": Command not recognized.");
+                                SendData("PRIVMSG", ex[2] + " :" + Util.NickRegex.Match(ex[0]) + ": Command not recognized.");
                                 break;
                         }
                     }
@@ -367,36 +297,36 @@ namespace Kiwana.Core
                                 break;
                             case "help":
                                 string help = "Available commands are: ";
-                                help += _joinStringArray(_config.Commands.Where(cmd => cmd.ConsoleServer == (console ? ConsoleServer.Console : ConsoleServer.Server) || cmd.ConsoleServer == ConsoleServer.Both).Select(cmd => cmd.Name).ToList(), ", ");
-                                help += " . With prefixes: " + _joinStringArray(_config.Prefixes, ", ") + " .";
+                                help += Util.JoinStringList(_config.Commands.Where(cmd => cmd.ConsoleServer == (console ? ConsoleServer.Console : ConsoleServer.Server) || cmd.ConsoleServer == ConsoleServer.Both).Select(cmd => cmd.Name).ToList(), ", ");
+                                help += " . With prefixes: " + Util.JoinStringList(_config.Prefixes, ", ") + " .";
                                 SendData("PRIVMSG", ex[2] + " :" + help.Replace("\\", ""));
                                 break;
                             case "tosscoin":
-                                SendData("PRIVMSG", ex[2] + " :" + _nickRegex.Match(ex[0]) + ": " + (random.Next(1, 3) == 1 ? "Tails" : "Heads"));
+                                SendData("PRIVMSG", ex[2] + " :" + Util.NickRegex.Match(ex[0]) + ": " + (random.Next(1, 3) == 1 ? "Tails" : "Heads"));
                                 break;
                             case "mcstatus":
                                 SendData("PRIVMSG", ex[2] + " :Retrieving status of Minecraft services...");
                                 _writeMcStatus(ex[2]);
                                 break;
                             case "part":
-                                if (_canDoCommand(_nickRegex.Match(ex[0]).Value) || console)
+                                if (_canDoCommand(Util.NickRegex.Match(ex[0]).Value) || console)
                                 {
                                     SendData("PART", ex[2]);
                                 }
                                 else
                                 {
-                                    SendData("PRIVMSG", ex[2] + " :" + _nickRegex.Match(ex[0]) + ": You don't have permission to do this.");
+                                    SendData("PRIVMSG", ex[2] + " :" + Util.NickRegex.Match(ex[0]) + ": You don't have permission to do this.");
                                 }
                                 break;
                             case "quit":
-                                if (_canDoCommand(_nickRegex.Match(ex[0]).Value) || console)
+                                if (_canDoCommand(Util.NickRegex.Match(ex[0]).Value) || console)
                                 {
                                     SendData("QUIT");
                                     _shouldRun = false;
                                 }
                                 else
                                 {
-                                    SendData("PRIVMSG", ex[2] + " :" + _nickRegex.Match(ex[0]) + ": You don't have permission to do this.");
+                                    SendData("PRIVMSG", ex[2] + " :" + Util.NickRegex.Match(ex[0]) + ": You don't have permission to do this.");
                                 }
                                 break;
                         }
@@ -436,7 +366,7 @@ namespace Kiwana.Core
         {
             SendData("PRIVMSG", "NickServ :ACC " + name);
             List<string> ex = _streamReader.ReadLine().Split(' ').ToList();
-            if (ex.Count == 6 && _nickRegex.Match(ex[0]).Value == "NickServ")
+            if (ex.Count == 6 && Util.NickRegex.Match(ex[0]).Value == "NickServ")
             {
                 try
                 {
@@ -451,20 +381,6 @@ namespace Kiwana.Core
             {
                 return 0;
             }
-        }
-
-        private string _joinStringArray(List<string> strings, string glue = "", int start = 0)
-        {
-            string str = "";
-
-            for (int i = start; i < strings.Count; i++)
-            {
-                if (i < strings.Count && i > start)
-                { str += glue; }
-
-                str += strings[i];
-            }
-            return str;
         }
     }
 }
