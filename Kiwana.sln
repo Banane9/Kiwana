@@ -11,6 +11,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Kiwana.Plugins.Api", "Kiwan
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Kiwana.Plugins.ProbSim", "Kiwana.Plugins.ProbSim\Kiwana.Plugins.ProbSim.csproj", "{80F3F8D3-CF69-4366-9610-41B61C0835E6}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Kiwana.Plugins.McStatus", "Kiwana.Plugins.McStatus\Kiwana.Plugins.McStatus.csproj", "{AE9C868B-1606-4661-B9AF-8F9D8A3B5B4C}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -33,6 +35,10 @@ Global
 		{80F3F8D3-CF69-4366-9610-41B61C0835E6}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{80F3F8D3-CF69-4366-9610-41B61C0835E6}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{80F3F8D3-CF69-4366-9610-41B61C0835E6}.Release|Any CPU.Build.0 = Release|Any CPU
+		{AE9C868B-1606-4661-B9AF-8F9D8A3B5B4C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{AE9C868B-1606-4661-B9AF-8F9D8A3B5B4C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{AE9C868B-1606-4661-B9AF-8F9D8A3B5B4C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{AE9C868B-1606-4661-B9AF-8F9D8A3B5B4C}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -39,6 +39,12 @@ namespace Kiwana.Core
 
             _prefixRegex = new Regex(@"(?<=" + Util.JoinStringList(_config.Prefixes, "|") + ").+");
 
+            foreach (Kiwana.Core.Plugins.Plugin plugin in _plugins)
+            {
+                _config.Commands.AddRange(plugin.Config.Commands);
+                plugin.Instance.SendDataEvent += SendData;
+            }
+
             string serverCommandRegex = @"";
             string consoleCommandRegex = @"";
             for (int i = 0; i < _config.Commands.Count; i++)
@@ -138,23 +144,21 @@ namespace Kiwana.Core
                 return;
             }
 
-            _plugins[0].Instance.HandleLine(ex, false, console, SendData);
+            if (ex.Count > 3 || console)
+            {
+                string command = "";
 
-            //if (ex.Count > 3 || console)
-            //{
-            //    string command = "";
+                if (console)
+                {
+                    command = ex[0].ToLower();
+                    ex.InsertRange(0, new string[] { "", "", "" });
+                }
+                else
+                {
+                    command = _prefixRegex.Match(ex[3]).Value.ToLower();
+                }
 
-            //    if (console)
-            //    {
-            //        command = ex[0].ToLower();
-            //        ex.InsertRange(0, new string[] { "", "", "" });
-            //    }
-            //    else
-            //    {
-            //        command = _prefixRegex.Match(ex[3]).Value.ToLower();
-            //    }
-
-            //    //Print input from server
+                //Print input from server
             if (!console)
             {
                 //Console.WriteLine(Util.JoinStringList(ex, " "));
@@ -176,176 +180,173 @@ namespace Kiwana.Core
                 }
             }
 
-            //    //Is it a valid command from the console or from the server
-            //    if ((_consoleCommandRegex.IsMatch(command) && console) || (_serverCommandRegex.IsMatch(command) && !console))
-            //    {
-            //        string normalizedCommand = "";
-            //        foreach (Command commandToCheck in _config.Commands)
-            //        {
-            //            if (command == commandToCheck.Name)
-            //            {
-            //                normalizedCommand = command;
-            //                break;
-            //            }
-
-            //            string regexString = "^(" + Util.JoinStringList(commandToCheck.Alias, "|") + ")$";
-
-            //            if (!String.IsNullOrEmpty(regexString))
-            //            {
-            //                Regex regex = new Regex(regexString);
-            //                if (regex.IsMatch(command))
-            //                {
-            //                    normalizedCommand = regex.Replace(command, commandToCheck.Name);
-            //                }
-
-            //                if (!String.IsNullOrEmpty(normalizedCommand)) break;
-            //            }
-            //        }
-
-            //        if (ex[2] == _config.Server.User.Nick)
-            //        {
-            //            ex[2] = Util.NickRegex.Match(ex[0]).Value;
-            //        }
-
-            //        //Commands with arguments
-            //        if (ex.Count > 4)
-            //        {
-            //            switch (normalizedCommand)
-            //            {
-            //                case "join":
-            //                    if (_canDoCommand(Util.NickRegex.Match(ex[0]).Value) || console)
-            //                    {
-            //                        SendData("JOIN", Util.JoinStringList(ex, ",", 4));
-            //                    }
-            //                    else
-            //                    {
-            //                        SendData("PRIVMSG", ex[2] + " :" + Util.NickRegex.Match(ex[0]) + ": You don't have permission to do this.");
-            //                    }
-            //                    break;
-            //                case "about":
-            //                    SendData("PRIVMSG", ex[2] + " :" + _config.About);
-            //                    break;
-            //                case "help":
-            //                    string help = "Available commands are: ";
-            //                    help += Util.JoinStringList(_config.Commands.Where(cmd => cmd.ConsoleServer == (console ? ConsoleServer.Console : ConsoleServer.Server) || cmd.ConsoleServer == ConsoleServer.Both).Select(cmd => cmd.Name).ToList(), ", ");
-            //                    help += " . With prefixes: " + Util.JoinStringList(_config.Prefixes, ", ") + " .";
-            //                    SendData("PRIVMSG", ex[2] + " :" + help.Replace("\\", ""));
-            //                    break;
-            //                case "say":
-            //                    SendData("PRIVMSG", ex[2] + " :" + Util.JoinStringList(ex, " ", 4)); //channel + *space*: + message
-            //                    break;
-            //                case "letmegooglethatforyou":
-            //                    SendData("PRIVMSG", ex[2] + " :http://lmgtfy.com/?q=" + Util.JoinStringList(ex, "+", 4));
-            //                    break;
-            //                case "tell":
-            //                    if (_canDoCommand(Util.NickRegex.Match(ex[0]).Value) || console)
-            //                    {
-            //                        SendData("PRIVMSG", ex[4] + " :" + Util.JoinStringList(ex, " ", 5));
-            //                    }
-            //                    else
-            //                    {
-            //                        SendData("PRIVMSG", ex[2] + " :" + Util.NickRegex.Match(ex[0]) + ": You don't have permission to do this.");
-            //                    }
-            //                    break;
-            //                case "nick":
-            //                    if (_canDoCommand(Util.NickRegex.Match(ex[0]).Value) || console)
-            //                    {
-            //                        SendData("NICK", Util.JoinStringList(ex, "_", 4));
-            //                        _config.Server.User.Nick = Util.JoinStringList(ex, "_", 4);
-            //                    }
-            //                    else
-            //                    {
-            //                        SendData("PRIVMSG", ex[2] + " :" + Util.NickRegex.Match(ex[0]) + ": You don't have permission to do this.");
-            //                    }
-            //                    break;
-            //                case "raw":
-            //                    if (_canDoCommand(Util.NickRegex.Match(ex[0]).Value) || console)
-            //                    {
-            //                        _shouldRun = ex[4].ToUpper() != "QUIT";
-            //                        SendData(Util.JoinStringList(ex, " ", 4));
-            //                    }
-            //                    else
-            //                    {
-            //                        SendData("PRIVMSG", ex[2] + " :" + Util.NickRegex.Match(ex[0]) + ": You don't have permission to do this.");
-            //                    }
-            //                    break;
-            //                case "part":
-            //                    if (_canDoCommand(Util.NickRegex.Match(ex[0]).Value) || console)
-            //                    {
-            //                        SendData("PART", Util.JoinStringList(ex, ",", 4));
-            //                    }
-            //                    else
-            //                    {
-            //                        SendData("PRIVMSG", ex[2] + " :" + Util.NickRegex.Match(ex[0]) + ": You don't have permission to do this.");
-            //                    }
-            //                    break;
-            //                case "quit":
-            //                    if (_canDoCommand(Util.NickRegex.Match(ex[0]).Value) || console)
-            //                    {
-            //                        SendData("QUIT", ":" + Util.JoinStringList(ex, " ", 4));
-            //                        _shouldRun = false;
-            //                    }
-            //                    else
-            //                    {
-            //                        SendData("PRIVMSG", ex[2] + " :" + Util.NickRegex.Match(ex[0]) + ": You don't have permission to do this.");
-            //                    }
-            //                    break;
-            //                default:
-            //                    SendData("PRIVMSG", ex[2] + " :" + Util.NickRegex.Match(ex[0]) + ": Command not recognized.");
-            //                    break;
-            //            }
-            //        }
-            //        else //Commands without arguments
-            //        {
-            //            switch (normalizedCommand)
-            //            {
-            //                case "about":
-            //                    SendData("PRIVMSG", ex[2] + " :" + _config.About);
-            //                    break;
-            //                case "help":
-            //                    string help = "Available commands are: ";
-            //                    help += Util.JoinStringList(_config.Commands.Where(cmd => cmd.ConsoleServer == (console ? ConsoleServer.Console : ConsoleServer.Server) || cmd.ConsoleServer == ConsoleServer.Both).Select(cmd => cmd.Name).ToList(), ", ");
-            //                    help += " . With prefixes: " + Util.JoinStringList(_config.Prefixes, ", ") + " .";
-            //                    SendData("PRIVMSG", ex[2] + " :" + help.Replace("\\", ""));
-            //                    break;
-            //                case "mcstatus":
-            //                    SendData("PRIVMSG", ex[2] + " :Retrieving status of Minecraft services...");
-            //                    _writeMcStatus(ex[2]);
-            //                    break;
-            //                case "part":
-            //                    if (_canDoCommand(Util.NickRegex.Match(ex[0]).Value) || console)
-            //                    {
-            //                        SendData("PART", ex[2]);
-            //                    }
-            //                    else
-            //                    {
-            //                        SendData("PRIVMSG", ex[2] + " :" + Util.NickRegex.Match(ex[0]) + ": You don't have permission to do this.");
-            //                    }
-            //                    break;
-            //                case "quit":
-            //                    if (_canDoCommand(Util.NickRegex.Match(ex[0]).Value) || console)
-            //                    {
-            //                        SendData("QUIT");
-            //                        _shouldRun = false;
-            //                    }
-            //                    else
-            //                    {
-            //                        SendData("PRIVMSG", ex[2] + " :" + Util.NickRegex.Match(ex[0]) + ": You don't have permission to do this.");
-            //                    }
-            //                    break;
-            //            }
-            //        }
-            //    }
-            //}
-        }
-
-        private async void _writeMcStatus(string who)
-        {
-            Dictionary<string, string> mcStatus = await McStatus.GetMcStatus();
-
-            foreach (string key in mcStatus.Keys.ToList())
+            //Is it a valid command from the console or from the server
+            if ((_consoleCommandRegex.IsMatch(command) && console) || (_serverCommandRegex.IsMatch(command) && !console))
             {
-                SendData("PRIVMSG", who + " :" + McStatus.SericeNames[key] + ": " + McStatus.StatusMessages[mcStatus[key]]);
+                string normalizedCommand = "";
+                foreach (Command commandToCheck in _config.Commands)
+                {
+                    if (command == commandToCheck.Name)
+                    {
+                        normalizedCommand = command;
+                        break;
+                    }
+
+                    string regexString = "^(" + Util.JoinStringList(commandToCheck.Alias, "|") + ")$";
+
+                    if (!String.IsNullOrEmpty(regexString))
+                    {
+                        Regex regex = new Regex(regexString);
+                        if (regex.IsMatch(command))
+                        {
+                            normalizedCommand = regex.Replace(command, commandToCheck.Name);
+                        }
+
+                        if (!String.IsNullOrEmpty(normalizedCommand)) break;
+                    }
+                }
+
+                if (ex[2] == _config.Server.User.Nick)
+                {
+                    ex[2] = Util.NickRegex.Match(ex[0]).Value;
+                }
+
+                foreach (Kiwana.Core.Plugins.Plugin plugin in _plugins)
+                {
+                    plugin.Instance.HandleLine(ex, normalizedCommand, false, console);
+                }
+
+                //Commands with arguments
+                if (ex.Count > 4)
+                {
+                    switch (normalizedCommand)
+                    {
+                        case "join":
+                            if (_canDoCommand(Util.NickRegex.Match(ex[0]).Value) || console)
+                            {
+                                SendData("JOIN", Util.JoinStringList(ex, ",", 4));
+                            }
+                            else
+                            {
+                                SendData("PRIVMSG", ex[2] + " :" + Util.NickRegex.Match(ex[0]) + ": You don't have permission to do this.");
+                            }
+                            break;
+                        case "about":
+                            SendData("PRIVMSG", ex[2] + " :" + _config.About);
+                            break;
+                        case "help":
+                            string help = "Available commands are: ";
+                            help += Util.JoinStringList(_config.Commands.Where(cmd => cmd.ConsoleServer == (console ? ConsoleServer.Console : ConsoleServer.Server) || cmd.ConsoleServer == ConsoleServer.Both).Select(cmd => cmd.Name).ToList(), ", ");
+                            help += " . With prefixes: " + Util.JoinStringList(_config.Prefixes, ", ") + " .";
+                            SendData("PRIVMSG", ex[2] + " :" + help.Replace("\\", ""));
+                            break;
+                        case "say":
+                            SendData("PRIVMSG", ex[2] + " :" + Util.JoinStringList(ex, " ", 4)); //channel + *space*: + message
+                            break;
+                        case "letmegooglethatforyou":
+                            SendData("PRIVMSG", ex[2] + " :http://lmgtfy.com/?q=" + Util.JoinStringList(ex, "+", 4));
+                            break;
+                        case "tell":
+                            if (_canDoCommand(Util.NickRegex.Match(ex[0]).Value) || console)
+                            {
+                                SendData("PRIVMSG", ex[4] + " :" + Util.JoinStringList(ex, " ", 5));
+                            }
+                            else
+                            {
+                                SendData("PRIVMSG", ex[2] + " :" + Util.NickRegex.Match(ex[0]) + ": You don't have permission to do this.");
+                            }
+                            break;
+                        case "nick":
+                            if (_canDoCommand(Util.NickRegex.Match(ex[0]).Value) || console)
+                            {
+                                SendData("NICK", Util.JoinStringList(ex, "_", 4));
+                                _config.Server.User.Nick = Util.JoinStringList(ex, "_", 4);
+                            }
+                            else
+                            {
+                                SendData("PRIVMSG", ex[2] + " :" + Util.NickRegex.Match(ex[0]) + ": You don't have permission to do this.");
+                            }
+                            break;
+                        case "raw":
+                            if (_canDoCommand(Util.NickRegex.Match(ex[0]).Value) || console)
+                            {
+                                _shouldRun = ex[4].ToUpper() != "QUIT";
+                                SendData(Util.JoinStringList(ex, " ", 4));
+                            }
+                            else
+                            {
+                                SendData("PRIVMSG", ex[2] + " :" + Util.NickRegex.Match(ex[0]) + ": You don't have permission to do this.");
+                            }
+                            break;
+                        case "part":
+                            if (_canDoCommand(Util.NickRegex.Match(ex[0]).Value) || console)
+                            {
+                                SendData("PART", Util.JoinStringList(ex, ",", 4));
+                            }
+                            else
+                            {
+                                SendData("PRIVMSG", ex[2] + " :" + Util.NickRegex.Match(ex[0]) + ": You don't have permission to do this.");
+                            }
+                            break;
+                        case "quit":
+                            if (_canDoCommand(Util.NickRegex.Match(ex[0]).Value) || console)
+                            {
+                                SendData("QUIT", ":" + Util.JoinStringList(ex, " ", 4));
+                                _shouldRun = false;
+                            }
+                            else
+                            {
+                                SendData("PRIVMSG", ex[2] + " :" + Util.NickRegex.Match(ex[0]) + ": You don't have permission to do this.");
+                            }
+                            break;
+                    }
+                }
+                else //Commands without arguments
+                {
+                    switch (normalizedCommand)
+                    {
+                        case "about":
+                            SendData("PRIVMSG", ex[2] + " :" + _config.About);
+                            break;
+                        case "help":
+                            string help = "Available commands are: ";
+                            help += Util.JoinStringList(_config.Commands.Where(cmd => cmd.ConsoleServer == (console ? ConsoleServer.Console : ConsoleServer.Server) || cmd.ConsoleServer == ConsoleServer.Both).Select(cmd => cmd.Name).ToList(), ", ") + ", ";
+                            foreach (Kiwana.Core.Plugins.Plugin plugin in _plugins)
+                            {
+                                help += Util.JoinStringList(plugin.Config.Commands.Where(cmd => cmd.ConsoleServer == (console ? ConsoleServer.Console : ConsoleServer.Server) || cmd.ConsoleServer == ConsoleServer.Both).Select(cmd => cmd.Name).ToList(), ", ");
+                            }
+                            help += "; With prefixes: " + Util.JoinStringList(_config.Prefixes, ", ");
+                            SendData("PRIVMSG", ex[2] + " :" + help.Replace("\\", ""));
+                            break;
+                        case "plugins":
+                            string plugins = "Loaded plugins: ";
+                            plugins += Util.JoinStringList(_plugins.Select(plugin => plugin.Name).ToList(), ", ");
+                            SendData("PRIVMSG", ex[2] + " :" + plugins + ".");
+                            break;
+                        case "part":
+                            if (_canDoCommand(Util.NickRegex.Match(ex[0]).Value) || console)
+                            {
+                                SendData("PART", ex[2]);
+                            }
+                            else
+                            {
+                                SendData("PRIVMSG", ex[2] + " :" + Util.NickRegex.Match(ex[0]) + ": You don't have permission to do this.");
+                            }
+                            break;
+                        case "quit":
+                            if (_canDoCommand(Util.NickRegex.Match(ex[0]).Value) || console)
+                            {
+                                SendData("QUIT");
+                                _shouldRun = false;
+                            }
+                            else
+                            {
+                                SendData("PRIVMSG", ex[2] + " :" + Util.NickRegex.Match(ex[0]) + ": You don't have permission to do this.");
+                            }
+                            break;
+                    }
+                }
+            }
             }
         }
 

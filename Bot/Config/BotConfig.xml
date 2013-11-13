@@ -53,11 +53,7 @@
     <Command Name="about" ConsoleServer="Both">
       <Alias>a</Alias>
     </Command>
-    <Command Name="mcstatus" ConsoleServer="Both">
-      <Alias>mcs</Alias>
-      <Alias>mcstats</Alias>
-      <Alias>mcstat</Alias>
-    </Command>
+    <Command Name="plugins" ConsoleServer="Both"/>
   </Commands>
   <Prefixes>
     <Prefix>\!</Prefix>

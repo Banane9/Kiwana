@@ -19,7 +19,7 @@ namespace Kiwana.Core.Plugins
 
             string[] pluginPaths = Directory.GetFiles(folder, "*.dll");
 
-            Console.WriteLine("Loading Plugins from " + folder + " ...");
+            Console.WriteLine("Loading Plugins from /" + folder + " ...");
 
             foreach (string pluginPath in pluginPaths)
             {
