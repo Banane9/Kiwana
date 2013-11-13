@@ -57,6 +57,9 @@
     <Compile Include="Config\User.cs" />
     <Compile Include="Objects\Channel.cs" />
     <Compile Include="Objects\User.cs" />
+    <Compile Include="Config\PluginConfig.cs" />
+    <Compile Include="Plugins\Plugin.cs" />
+    <Compile Include="Plugins\PluginManager.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>

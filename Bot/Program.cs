@@ -1,6 +1,8 @@
 ﻿using Kiwana.Core;
 using Kiwana.Core.Config;
+using Kiwana.Core.Plugins;
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
 using System.Xml;
@@ -13,8 +15,12 @@ namespace Kiwana
         static void Main(string[] arg)
         {
             XmlSerializer serializer = new XmlSerializer(typeof(BotConfig));
-            XmlReader reader = XmlReader.Create("BotConfig.xml");
+            XmlReader reader = XmlReader.Create("Config/BotConfig.xml");
             BotConfig botConfig = (BotConfig)serializer.Deserialize(reader);
+
+            List<Plugin> plugins = PluginManager.ScanPluginFolder("Plugins");
+
+            Console.WriteLine(plugins[0].Instance.GetRandom(1, 10));
 
             //Console.WriteLine("Name: " + botConfig.Commands[0].Name);
             //foreach (string alias in botConfig.Commands[0].Alias)

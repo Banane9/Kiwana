@@ -4,6 +4,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 VisualStudioVersion = 12.0.20827.3
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Kiwana.Core", "IRC\Kiwana.Core.csproj", "{BBB30695-FE77-4448-956A-AEDEA14D3D3F}"
+	ProjectSection(ProjectDependencies) = postProject
+		{9255F7D6-2347-4022-B014-7A9A750579DE} = {9255F7D6-2347-4022-B014-7A9A750579DE}
+	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Kiwana", "Bot\Kiwana.csproj", "{384F39AD-3A81-4612-882B-5901CF02C187}"
 EndProject
