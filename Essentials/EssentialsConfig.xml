@@ -10,5 +10,6 @@
       <Alias>m</Alias>
       <Alias>t</Alias>
     </Command>
+    <Command Name="me" ConsoleServer="Server"/>
   </Commands>
 </PluginConfig>

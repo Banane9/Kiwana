@@ -30,29 +30,28 @@ namespace ProbSim
                         {
                             int value = 0;
                             string nextMode = "+";
+                            string formula = Util.JoinStringList(ex, start: 4);
 
-                            if (Regex.IsMatch(Util.JoinStringList(ex, start: 4), @"\d+((-|\+)\d+)?d\d+(-|\+)?"))
+                            if (Regex.IsMatch(formula, @"\d+((-|\+)\d+)?d\d+(-|\+)?"))
                             {
-                                MatchCollection diceFormulas = Regex.Matches(Util.JoinStringList(ex, start: 4), @"\d+((-|\+)\d+)?d\d+(-|\+)?");
+                                MatchCollection diceFormulas = Regex.Matches(formula, @"\d+((-|\+)\d+)?d\d+(-|\+)?");
                                 foreach (Match diceFormula in diceFormulas)
                                 {
-                                    Console.WriteLine(diceFormula.Value);
-
                                     int diceValue = 0;
 
                                     int dice = int.Parse(Regex.Match(diceFormula.Value, @"^\d+").Value);
 
                                     int add = 0;
-                                    if (Regex.IsMatch(ex[4], @"(-|\+)\d+(?=d)"))
+                                    if (Regex.IsMatch(diceFormula.Value, @"(-|\+)\d+(?=d)"))
                                     {
                                         add = int.Parse(Regex.Match(diceFormula.Value, @"(-|\+)\d+(?=d)").Value);
                                     }
 
-                                    int max = int.Parse(Regex.Match(diceFormula.Value, @"(?<=d)\d+").Value);
+                                    int sides = int.Parse(Regex.Match(diceFormula.Value, @"(?<=d)\d+").Value);
 
                                     for (int i = 0; i < dice; i++)
                                     {
-                                        diceValue += _random.Next(1, max);
+                                        diceValue += _random.Next(1, sides);
                                     }
 
                                     diceValue += add;
@@ -74,7 +73,7 @@ namespace ProbSim
                             }
                             else
                             {
-                                SendData("PRIVMSG", ex[2] + " :" + Util.NickRegex.Match(ex[0]) + ": No valid dice formula found.");
+                                SendData("PRIVMSG", ex[2] + " :" + Util.NickRegex.Match(ex[0]) + ": Invalid dice formula.");
                             }
                         }
                         catch

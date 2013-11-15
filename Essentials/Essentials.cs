@@ -17,6 +17,9 @@ namespace Essentials
                     case "say":
                         SendData("PRIVMSG", ex[2] + " :" + Util.JoinStringList(ex, " ", 4)); //channel + *space*: + message
                         break;
+                    case "me":
+                        SendData("PRIVMSG", ex[2] + " :\x01" + "ACTION " + Util.JoinStringList(ex, " ", 4) + "\x01");
+                        break;
                     case "tell":
                         if (userAuthenticated || console)
                         {

@@ -57,7 +57,7 @@ namespace Kiwana.Core
                 Console.Write("  - " + plugin.Name + " ... ");
                 try
                 {
-                    await Task.Run(() => plugin.Instance.Init());
+                    plugin.Instance.Init();
                     Console.WriteLine("OK");
                 }
                 catch (Exception e)
@@ -171,6 +171,39 @@ namespace Kiwana.Core
             }
         }
 
+        public string GetNormalizedCommand(string cmd, bool console)
+        {
+            string command = "";
+
+            //Is it a valid command from the console or from the server
+            if ((_consoleCommandRegex.IsMatch(cmd) && console) || (_serverCommandRegex.IsMatch(cmd) && !console))
+            {
+                foreach (Command commandToCheck in _config.Commands)
+                {
+                    if (cmd == commandToCheck.Name)
+                    {
+                        command = cmd;
+                        break;
+                    }
+
+                    string regexString = "^(" + Util.JoinStringList(commandToCheck.Alias, "|") + ")$";
+
+                    if (!String.IsNullOrEmpty(regexString))
+                    {
+                        Regex regex = new Regex(regexString);
+                        if (regex.IsMatch(cmd))
+                        {
+                            command = regex.Replace(cmd, commandToCheck.Name);
+                        }
+
+                        if (!String.IsNullOrEmpty(command)) break;
+                    }
+                }
+            }
+
+            return command;
+        }
+
         public void ParseLine(string line, bool console = false)
         {
             List<string> ex = line.Split(' ').ToList();
@@ -196,52 +229,28 @@ namespace Kiwana.Core
                 }
 
                 //Print input from server
-            if (!console)
-            {
-                //Console.WriteLine(Util.JoinStringList(ex, " "));
-                if (Util.NickRegex.IsMatch(ex[0]))
+                if (!console)
                 {
-                    Console.WriteLine(ex[2] /*+ " " + ex[1]*/ + " <" + Util.NickRegex.Match(ex[0]) + "!" + Util.NameRegex.Match(ex[0]) + "> " + Util.MessageRegex.Match(ex[3]) + " " + Util.JoinStringList(ex, " ", 4));
-                }
-                else if (Util.MessageRegex.IsMatch(ex[3]))
-                {
-                    Console.WriteLine(Util.MessageRegex.Match(ex[3]) + " " + Util.JoinStringList(ex, " ", 4));
-                }
-                else if (Util.MessageRegex.IsMatch(Util.JoinStringList(ex, " ", 4)))
-                {
-                    Console.WriteLine(Util.MessageRegex.Match(Util.JoinStringList(ex, " ", 4)));
-                }
-                else
-                {
-                    Console.WriteLine(Util.JoinStringList(ex, " "));
-                }
-            }
-
-            //Is it a valid command from the console or from the server
-            if ((_consoleCommandRegex.IsMatch(command) && console) || (_serverCommandRegex.IsMatch(command) && !console))
-            {
-                string normalizedCommand = "";
-                foreach (Command commandToCheck in _config.Commands)
-                {
-                    if (command == commandToCheck.Name)
+                    //Console.WriteLine(Util.JoinStringList(ex, " "));
+                    if (Util.NickRegex.IsMatch(ex[0]))
                     {
-                        normalizedCommand = command;
-                        break;
+                        Console.WriteLine(ex[2] /*+ " " + ex[1]*/ + " <" + Util.NickRegex.Match(ex[0]) + "!" + Util.NameRegex.Match(ex[0]) + "> " + Util.MessageRegex.Match(ex[3]) + " " + Util.JoinStringList(ex, " ", 4));
                     }
-
-                    string regexString = "^(" + Util.JoinStringList(commandToCheck.Alias, "|") + ")$";
-
-                    if (!String.IsNullOrEmpty(regexString))
+                    else if (Util.MessageRegex.IsMatch(ex[3]))
                     {
-                        Regex regex = new Regex(regexString);
-                        if (regex.IsMatch(command))
-                        {
-                            normalizedCommand = regex.Replace(command, commandToCheck.Name);
-                        }
-
-                        if (!String.IsNullOrEmpty(normalizedCommand)) break;
+                        Console.WriteLine(Util.MessageRegex.Match(ex[3]) + " " + Util.JoinStringList(ex, " ", 4));
+                    }
+                    else if (Util.MessageRegex.IsMatch(Util.JoinStringList(ex, " ", 4)))
+                    {
+                        Console.WriteLine(Util.MessageRegex.Match(Util.JoinStringList(ex, " ", 4)));
+                    }
+                    else
+                    {
+                        Console.WriteLine(Util.JoinStringList(ex, " "));
                     }
                 }
+
+                string normalizedCommand = GetNormalizedCommand(command, console);
 
                 if (ex[2] == _config.Server.User.Nick)
                 {
@@ -372,7 +381,6 @@ namespace Kiwana.Core
                     }
                 }
             }
-            }
         }
 
         private bool _canDoCommand(string name)
@@ -413,7 +421,7 @@ namespace Kiwana.Core
             }
         }
 
-        private async void Quit(string message = "")
+        private void Quit(string message = "")
         {
             _shouldRun = false;
             SendData("QUIT", message);
@@ -422,7 +430,7 @@ namespace Kiwana.Core
             foreach (Kiwana.Core.Plugins.KPlugin plugin in _plugins)
             {
                 Console.Write("  - " + plugin.Name + " ... ");
-                await Task.Run(() => plugin.Instance.Disable());
+                plugin.Instance.Disable();
                 Console.WriteLine("OK");
             }
         }
