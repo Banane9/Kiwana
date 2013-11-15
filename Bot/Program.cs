@@ -8,32 +8,21 @@ using System.Threading.Tasks;
 using System.Xml;
 using System.Xml.Serialization;
 
-namespace Kiwana
+namespace Kiwana.ConsoleApplication
 {
     class Program
     {
         static void Main(string[] arg)
         {
-            XmlSerializer serializer = new XmlSerializer(typeof(BotConfig));
-            XmlReader reader = XmlReader.Create("Config/BotConfig.xml");
-            BotConfig botConfig = (BotConfig)serializer.Deserialize(reader);
+            Client client = new Client("BotConfig.xml");
 
-            List<Plugin> plugins = PluginManager.ScanPluginFolder("Plugins");
-
-            //Console.WriteLine("Name: " + botConfig.Commands[0].Name);
-            //foreach (string alias in botConfig.Commands[0].Alias)
-            //{
-            //    Console.WriteLine("Alias: " + alias);
-            //}
-
-            Client client = new Client(botConfig, plugins);
-
-            Task bot = Task.Run(() => { client.Work(); });
+            Task bot = Task.Run(() => client.Work());
 
             while (!bot.IsCompleted)
             {
                 client.ParseLine(Console.ReadLine(), true);
             }
+            Console.ReadLine();
         }
     }
 }

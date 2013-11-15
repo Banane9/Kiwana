@@ -1,9 +1,11 @@
-﻿using Kiwana.Core.Config;
+﻿using Kiwana.Core.Api;
+using Kiwana.Core.Config;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
 using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 using System.Xml;
 using System.Xml.Serialization;
 
@@ -13,31 +15,34 @@ namespace Kiwana.Core.Plugins
     {
         private static XmlSerializer _pluginConfigSerializer = new XmlSerializer(typeof(PluginConfig));
 
-        public static List<Plugin> ScanPluginFolder(string folder)
+        public static List<KPlugin> ScanPluginFolder(string folder)
         {
-            List<Plugin> plugins = new List<Plugin>();
+            List<KPlugin> plugins = new List<KPlugin>();
 
-            string[] pluginPaths = Directory.GetFiles(folder, "*.dll");
-
-            Console.WriteLine("Loading Plugins from /" + folder + " ...");
-
-            foreach (string pluginPath in pluginPaths)
+            if (Directory.Exists(folder))
             {
-                Plugin plugin = new Plugin();
-                plugin.Name = Regex.Match(pluginPath, @"\w+(?=.dll)", RegexOptions.IgnoreCase).Value;
+                string[] pluginPaths = Directory.GetFiles(folder, "*.dll");
 
-                Console.WriteLine("  - " + plugin.Name);
+                foreach (string pluginPath in pluginPaths)
+                {
+                    Assembly dll = Assembly.LoadFile(Path.GetFullPath(pluginPath));
+                    foreach (Type type in dll.ExportedTypes)
+                    {
+                        if (type.IsSubclassOf(typeof(Plugin)))
+                        {
+                            KPlugin plugin = new KPlugin();
+                            plugin.Name = type.Name;
 
-                XmlReader reader = XmlReader.Create(folder + "/" + plugin.Name + "Config.xml");
-                plugin.Config = (PluginConfig)_pluginConfigSerializer.Deserialize(reader);
+                            XmlReader reader = XmlReader.Create(folder + "/" + plugin.Name + "Config.xml");
+                            plugin.Config = (PluginConfig)_pluginConfigSerializer.Deserialize(reader);
 
-                Assembly dll = Assembly.LoadFile(Path.GetFullPath(pluginPath));
-                plugin.Instance = (Kiwana.Plugins.Api.Plugin)Activator.CreateInstance(dll.GetType(plugin.Config.ClassName));
+                            plugin.Instance = (Plugin)Activator.CreateInstance(type);
 
-                plugins.Add(plugin);
+                            plugins.Add(plugin);
+                        }
+                    }
+                }
             }
-
-            Console.WriteLine("Done!");
 
             return plugins;
         }
