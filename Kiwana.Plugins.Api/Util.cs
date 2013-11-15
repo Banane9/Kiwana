@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Text.RegularExpressions;
 
-namespace Kiwana.Plugins.Api
+namespace Kiwana.Core.Api
 {
     /// <summary>
     /// Some useful utilities

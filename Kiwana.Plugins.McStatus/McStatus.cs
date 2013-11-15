@@ -1,11 +1,11 @@
-﻿using Kiwana.Plugins.Api;
+﻿using Kiwana.Core.Api;
 using System;
 using System.Collections.Generic;
 using System.Net.Http;
 using System.Threading.Tasks;
 using System.Web.Script.Serialization;
 
-namespace Kiwana.Plugins.McStatus
+namespace McStatus
 {
     public class McStatus : Plugin
     {
@@ -51,7 +51,8 @@ namespace Kiwana.Plugins.McStatus
 
             foreach (string key in mcStatus.Keys)
             {
-                SendData("PRIVMSG", who + " :" + ServiceNames[key] + ": " + McStatus.StatusMessages[mcStatus[key]]);
+                if (ServiceNames.ContainsKey(key) && StatusMessages.ContainsKey(mcStatus[key]))
+                    SendData("PRIVMSG", who + " :" + ServiceNames[key] + ": " + StatusMessages[mcStatus[key]]);
             }
         }
 

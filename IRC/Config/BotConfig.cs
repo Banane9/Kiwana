@@ -8,6 +8,10 @@ namespace Kiwana.Core.Config
     {
         public IrcServer Server { get; set; }
 
+        [XmlArray("PluginFolders")]
+        [XmlArrayItem("PluginFolder")]
+        public List<string> PluginFolders { get; set; }
+
         [XmlArray("Commands")]
         [XmlArrayItem("Command")]
         public List<Command> Commands { get; set; }

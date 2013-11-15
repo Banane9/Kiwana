@@ -1,9 +1,9 @@
-﻿using Kiwana.Plugins.Api;
+﻿using Kiwana.Core.Api;
 using System;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
 
-namespace Kiwana.Plugins.ProbSim
+namespace ProbSim
 {
     public class ProbSim : Plugin
     {

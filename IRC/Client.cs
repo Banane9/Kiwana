@@ -1,25 +1,31 @@
 ﻿using Kiwana.Core.Commands;
 using Kiwana.Core.Config;
 using Kiwana.Core.Objects;
-using Kiwana.Plugins.Api;
+using Kiwana.Core.Api;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net.Sockets;
 using System.Text.RegularExpressions;
+using System.Threading.Tasks;
+using Kiwana.Core.Plugins;
+using System.Xml.Serialization;
+using System.Xml;
 
 namespace Kiwana.Core
 {
     public class Client
     {
+        public bool Initialized = false;
+
         private TcpClient _ircConnection;
         private BotConfig _config;
         private NetworkStream _networkStream;
         private StreamReader _streamReader;
         private StreamWriter _streamWriter;
 
-        private List<Kiwana.Core.Plugins.Plugin> _plugins = new List<Plugins.Plugin>();
+        private List<Kiwana.Core.Plugins.KPlugin> _plugins = new List<Plugins.KPlugin>();
 
         public List<Channel> Channels { get; set; }
 
@@ -31,18 +37,43 @@ namespace Kiwana.Core
 
         private bool _shouldRun = true;
 
-        public Client(BotConfig config, List<Kiwana.Core.Plugins.Plugin> plugins)
+        public Client(string config)
         {
-            _config = config;
+            XmlSerializer serializer = new XmlSerializer(typeof(BotConfig));
+            XmlReader reader = XmlReader.Create(config);
+            _config = (BotConfig)serializer.Deserialize(reader);
+        }
 
-            _plugins = plugins;
+        public async Task<bool> Init()
+        {
+            foreach (string pluginFolder in _config.PluginFolders)
+            {
+                _plugins.AddRange(PluginManager.ScanPluginFolder(pluginFolder));
+            }
+
+            Console.WriteLine("Initializing Plugins ...");
+            foreach (KPlugin plugin in _plugins)
+            {
+                Console.Write("  - " + plugin.Name + " ... ");
+                try
+                {
+                    await Task.Run(() => plugin.Instance.Init());
+                    Console.WriteLine("OK");
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine("Failure");
+                    throw new PluginInitializationFailedException("Plugin " + plugin.Name + " failed initalization.", e);
+                }
+            }
 
             _prefixRegex = new Regex(@"(?<=" + Util.JoinStringList(_config.Prefixes, "|") + ").+");
 
-            foreach (Kiwana.Core.Plugins.Plugin plugin in _plugins)
+            foreach (Kiwana.Core.Plugins.KPlugin plugin in _plugins)
             {
                 _config.Commands.AddRange(plugin.Config.Commands);
                 plugin.Instance.SendDataEvent += SendData;
+                NewLine += plugin.Instance.HandleLine;
             }
 
             string serverCommandRegex = @"";
@@ -105,6 +136,8 @@ namespace Kiwana.Core
             {
                 Console.WriteLine("Communication Error");
             }
+
+            return true;
         }
 
         public void SendData(string command, string argument = "")
@@ -123,8 +156,13 @@ namespace Kiwana.Core
             Console.WriteLine(command + " " + argument);
         }
 
-        public void Work()
+        public async Task Work()
         {
+            if (!Initialized)
+            {
+                Initialized = await Init();
+            }
+            
             _shouldRun = true;
             
             while(_shouldRun)
@@ -141,7 +179,6 @@ namespace Kiwana.Core
             {
                 Console.WriteLine("PING " + ex[1]);
                 SendData("PONG", ex[1]);
-                return;
             }
 
             if (ex.Count > 3 || console)
@@ -211,10 +248,7 @@ namespace Kiwana.Core
                     ex[2] = Util.NickRegex.Match(ex[0]).Value;
                 }
 
-                foreach (Kiwana.Core.Plugins.Plugin plugin in _plugins)
-                {
-                    plugin.Instance.HandleLine(ex, normalizedCommand, false, console);
-                }
+                NewLine(ex, normalizedCommand, false, console);
 
                 //Commands with arguments
                 if (ex.Count > 4)
@@ -240,21 +274,8 @@ namespace Kiwana.Core
                             help += " . With prefixes: " + Util.JoinStringList(_config.Prefixes, ", ") + " .";
                             SendData("PRIVMSG", ex[2] + " :" + help.Replace("\\", ""));
                             break;
-                        case "say":
-                            SendData("PRIVMSG", ex[2] + " :" + Util.JoinStringList(ex, " ", 4)); //channel + *space*: + message
-                            break;
                         case "letmegooglethatforyou":
                             SendData("PRIVMSG", ex[2] + " :http://lmgtfy.com/?q=" + Util.JoinStringList(ex, "+", 4));
-                            break;
-                        case "tell":
-                            if (_canDoCommand(Util.NickRegex.Match(ex[0]).Value) || console)
-                            {
-                                SendData("PRIVMSG", ex[4] + " :" + Util.JoinStringList(ex, " ", 5));
-                            }
-                            else
-                            {
-                                SendData("PRIVMSG", ex[2] + " :" + Util.NickRegex.Match(ex[0]) + ": You don't have permission to do this.");
-                            }
                             break;
                         case "nick":
                             if (_canDoCommand(Util.NickRegex.Match(ex[0]).Value) || console)
@@ -270,8 +291,14 @@ namespace Kiwana.Core
                         case "raw":
                             if (_canDoCommand(Util.NickRegex.Match(ex[0]).Value) || console)
                             {
-                                _shouldRun = ex[4].ToUpper() != "QUIT";
-                                SendData(Util.JoinStringList(ex, " ", 4));
+                                if (ex[4].ToLower() == "quit")
+                                {
+                                    Quit(Util.JoinStringList(ex, " ", 4));
+                                }
+                                else
+                                {
+                                    SendData(Util.JoinStringList(ex, " ", 4));
+                                }
                             }
                             else
                             {
@@ -291,8 +318,7 @@ namespace Kiwana.Core
                         case "quit":
                             if (_canDoCommand(Util.NickRegex.Match(ex[0]).Value) || console)
                             {
-                                SendData("QUIT", ":" + Util.JoinStringList(ex, " ", 4));
-                                _shouldRun = false;
+                                Quit(Util.JoinStringList(ex, " ", 4));
                             }
                             else
                             {
@@ -311,7 +337,7 @@ namespace Kiwana.Core
                         case "help":
                             string help = "Available commands are: ";
                             help += Util.JoinStringList(_config.Commands.Where(cmd => cmd.ConsoleServer == (console ? ConsoleServer.Console : ConsoleServer.Server) || cmd.ConsoleServer == ConsoleServer.Both).Select(cmd => cmd.Name).ToList(), ", ") + ", ";
-                            foreach (Kiwana.Core.Plugins.Plugin plugin in _plugins)
+                            foreach (KPlugin plugin in _plugins)
                             {
                                 help += Util.JoinStringList(plugin.Config.Commands.Where(cmd => cmd.ConsoleServer == (console ? ConsoleServer.Console : ConsoleServer.Server) || cmd.ConsoleServer == ConsoleServer.Both).Select(cmd => cmd.Name).ToList(), ", ");
                             }
@@ -336,8 +362,7 @@ namespace Kiwana.Core
                         case "quit":
                             if (_canDoCommand(Util.NickRegex.Match(ex[0]).Value) || console)
                             {
-                                SendData("QUIT");
-                                _shouldRun = false;
+                                Quit();
                             }
                             else
                             {
@@ -387,5 +412,23 @@ namespace Kiwana.Core
                 return 0;
             }
         }
+
+        private async void Quit(string message = "")
+        {
+            _shouldRun = false;
+            SendData("QUIT", message);
+
+            Console.WriteLine("Disabling plugins ...");
+            foreach (Kiwana.Core.Plugins.KPlugin plugin in _plugins)
+            {
+                Console.Write("  - " + plugin.Name + " ... ");
+                await Task.Run(() => plugin.Instance.Disable());
+                Console.WriteLine("OK");
+            }
+        }
+
+        public delegate void NewLineHandler(List<string> ex, string command, bool userAuthenticated, bool console);
+
+        public event NewLineHandler NewLine;
     }
 }

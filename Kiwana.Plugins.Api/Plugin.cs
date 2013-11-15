@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
+using System.Threading.Tasks;
 
-namespace Kiwana.Plugins.Api
+namespace Kiwana.Core.Api
 {
     /// <summary>
     /// The class all Plugins must inherit from.
@@ -30,11 +31,30 @@ namespace Kiwana.Plugins.Api
         }
 
         /// <summary>
-        /// This method gets called every time there's an input that has to be handled by this plugin.
+        /// This method gets called every time the bot receives a line.
         /// </summary>
         /// <param name="ex">The List of strings resulting from splitting the input line at ' '. The command will already be matched to the name specified in the config (in lower case).</param>
         /// <param name="UserAuthenticated">Whether the user issuing the command is on the user list and authenticated with NickServ, or not.</param>
         /// <param name="console">Whether the command was issued from the console or not.</param>
-        public abstract void HandleLine(List<string> ex, string command, bool userAuthenticated, bool console);
+        public virtual void HandleLine(List<string> ex, string command, bool userAuthenticated, bool console)
+        {
+            return;
+        }
+
+        /// <summary>
+        /// Called when the class is initialized. Load data, etc. here.
+        /// </summary>
+        public virtual void Init()
+        {
+            return;
+        }
+
+        /// <summary>
+        /// Called when the bot shuts down. Save data, et.c here.
+        /// </summary>
+        public virtual void Disable()
+        {
+            return;
+        }
     }
 }

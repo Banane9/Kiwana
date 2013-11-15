@@ -1,0 +1,14 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<PluginConfig>
+  <Commands>
+    <Command Name="say" ConsoleServer="Server">
+      <Alias>s</Alias>
+    </Command>
+    <Command Name="tell" ConsoleServer="Console">
+      <Alias>msg</Alias>
+      <Alias>message</Alias>
+      <Alias>m</Alias>
+      <Alias>t</Alias>
+    </Command>
+  </Commands>
+</PluginConfig>

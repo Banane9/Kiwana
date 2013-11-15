@@ -1,13 +1,14 @@
-﻿using Kiwana.Core.Config;
+﻿using Kiwana.Core.Api;
+using Kiwana.Core.Config;
 
 namespace Kiwana.Core.Plugins
 {
-    public class Plugin
+    public class KPlugin
     {
         public string Name { get; set; }
 
         public PluginConfig Config { get; set; }
 
-        public Kiwana.Plugins.Api.Plugin Instance { get; set; }
+        public Plugin Instance { get; set; }
     }
 }

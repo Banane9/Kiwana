@@ -4,22 +4,24 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{BBB30695-FE77-4448-956A-AEDEA14D3D3F}</ProjectGuid>
+    <ProjectGuid>{89724FAA-AD92-45D6-B43B-29E6C4C6BA8C}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>Kiwana.Core</RootNamespace>
-    <AssemblyName>Kiwana.Core</AssemblyName>
+    <RootNamespace>Essentials</RootNamespace>
+    <AssemblyName>Essentials</AssemblyName>
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
+    <TargetFrameworkProfile />
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
-    <OutputPath>bin\Debug\</OutputPath>
+    <OutputPath>..\..\..\..\..\Desktop\Kiwana\Plugins\</OutputPath>
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
@@ -28,13 +30,11 @@
     <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
     <Reference Include="System.Core" />
-    <Reference Include="System.Net.Http" />
-    <Reference Include="System.Net.Http.WebRequest" />
-    <Reference Include="System.Web.Extensions" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="Microsoft.CSharp" />
@@ -42,32 +42,19 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Client.cs" />
-    <Compile Include="Commands\McStatus.cs" />
-    <Compile Include="Config\BotConfig.cs" />
-    <Compile Include="Config\Command.cs" />
-    <Compile Include="Config\ConsoleServer.cs" />
-    <Compile Include="Config\IrcServer.cs" />
-    <Compile Include="Config\User.cs" />
-    <Compile Include="Objects\Channel.cs" />
-    <Compile Include="Objects\User.cs" />
-    <Compile Include="Config\PluginConfig.cs" />
-    <Compile Include="Plugins\KPlugin.cs" />
-    <Compile Include="Plugins\PluginInitializationFailedException.cs" />
-    <Compile Include="Plugins\PluginManager.cs" />
+    <Compile Include="Essentials.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="app.config" />
-    <None Include="Config\PluginConfig.xsd">
-      <SubType>Designer</SubType>
-    </None>
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Kiwana.Plugins.Api\Kiwana.Core.Api.csproj">
       <Project>{f7c70fc8-ca2b-459f-9764-e8489ff71542}</Project>
       <Name>Kiwana.Core.Api</Name>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="EssentialsConfig.xml">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

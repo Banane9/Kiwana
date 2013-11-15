@@ -32,17 +32,17 @@
           <xs:complexType>
             <xs:sequence>
               <xs:element maxOccurs="unbounded" name="Command">
-                <xs:complexType>
-                  <xs:sequence>
+                <xs:complexType mixed="true">
+                  <xs:sequence minOccurs="0">
                     <xs:element maxOccurs="unbounded" name="Alias" type="xs:string" />
                   </xs:sequence>
                   <xs:attribute name="Name" type="xs:string" use="required" />
                   <xs:attribute name="ConsoleServer" use="required">
                     <xs:simpleType>
                       <xs:restriction base="xs:string">
-                        <xs:enumeration value="Console"/>
-                        <xs:enumeration value="Server"/>
                         <xs:enumeration value="Both"/>
+                        <xs:enumeration value="Server"/>
+                        <xs:enumeration value="Console"/>
                       </xs:restriction>
                     </xs:simpleType>
                   </xs:attribute>
