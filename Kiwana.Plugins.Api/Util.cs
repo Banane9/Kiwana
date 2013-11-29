@@ -9,22 +9,32 @@ namespace Kiwana.Core.Api
     public static class Util
     {
         /// <summary>
-        /// Matches the nick of the user from :nick!name@host.com in ex[0]
+        /// Matches the User Host Mask nick!name@host.com
         /// </summary>
-        public static Regex NickRegex = new Regex(@"(?<=\:).+(?=\!)");
+        public static Regex HostMaskRegex = new Regex(@"(?<=^\:|^)[^:].+(!|!~).+@[\w\.\-]+(.[\w\.\-])+");
 
         /// <summary>
-        /// Matches the name of the user from :nick!name@host.com in ex[0]
+        /// Matches the nick of the user from nick!name@host.com
+        /// </summary>
+        public static Regex NickRegex = new Regex(@"(?<=^\:|^)[^:].+(?=(!|!~)[^~].+(?=@))");
+
+        /// <summary>
+        /// Matches the name of the user from nick!name@host.com
         /// </summary>
         public static Regex NameRegex = new Regex(@"(?<=!|!~)[^~].+(?=@)");
 
         /// <summary>
-        /// Matches the host of the user from :nick!name@host.com in ex[0]
+        /// Matches the host of the user from nick!name@host.com
         /// </summary>
         public static Regex HostRegex = new Regex(@"(?<=@).+");
 
         /// <summary>
-        /// Matches the Message and Motd format. :Message in ex[0] for motd and starting at ex[3] for message.
+        /// Matches the server from irc.server.com
+        /// </summary>
+        public static Regex ServerRegex = new Regex(@"[\w\.\-]+(.[\w\.\-])+");
+
+        /// <summary>
+        /// Matches the Message and Motd format. :Message in ex[0] for motd and at ex[3] for message.
         /// </summary>
         public static Regex MessageRegex = new Regex(@"(?<=\:).+");
 

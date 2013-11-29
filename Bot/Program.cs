@@ -18,17 +18,14 @@ namespace Kiwana.ConsoleApplication
 
             Task bot = Task.Run(() => client.Work());
 
-            while (!bot.IsCompleted)
+            while (client.Running)
             {
                 string input = Console.ReadLine();
-                if (!bot.IsCompleted)
+                if (client.Running)
                 {
                     client.ParseLine(input, true);
                 }
             }
-
-            Console.WriteLine("Press Enter to close the Command Line");
-            Console.ReadLine();
         }
     }
 }

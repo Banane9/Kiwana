@@ -28,7 +28,7 @@ namespace Kiwana.Core
 
         private List<Kiwana.Core.Plugins.PluginInformation> _plugins = new List<Plugins.PluginInformation>();
 
-        public List<Channel> Channels { get; set; }
+        public Dictionary<string, Channel> Channels = new Dictionary<string, Channel>();
 
         private Regex _prefixRegex;
         private Regex _serverCommandRegex;
@@ -163,7 +163,15 @@ namespace Kiwana.Core
             
             while(Running)
             {
-                ParseLine(_streamReader.ReadLine());
+                try
+                {
+                    ParseLine(_streamReader.ReadLine());
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine("Exception " + ex.Message);
+                    Console.WriteLine(ex.StackTrace);
+                }
             }
         }
 
@@ -203,11 +211,108 @@ namespace Kiwana.Core
         public void ParseLine(string line, bool console = false)
         {
             List<string> ex = line.Split(' ').ToList();
+            //Console.WriteLine(Util.JoinStringList(ex, " "));
 
-            if (ex[0] == "PING")
+            if (ex.Count < 2) return;
+
+            if (!console)
             {
-                Console.WriteLine("PING " + ex[1]);
-                SendData("PONG", ex[1]);
+                if (ex.Count == 2)
+                {
+                    if (ex[0] == "PING")
+                    {
+                        Console.WriteLine("PING " + ex[1]);
+                        SendData("PONG", ex[1]);
+                    }
+                }
+
+                if (ex.Count > 6)
+                {
+                    if (Util.ServerRegex.IsMatch(ex[0]))
+                    {
+                        if (ex[3] == "=")
+                        {
+                            //If the bot is in the channel
+                            if (Channels.ContainsKey(ex[4].ToLower()))
+                            {
+                                Console.WriteLine("Users in " + ex[4] + ": " + Util.MessageRegex.Match(ex[5]).Value + ", " + Util.JoinStringList(ex, ", ", 6));
+
+                                //Dictionary for the Users in the Channel
+                                Dictionary<string, ChannelUser> userList = new Dictionary<string, ChannelUser>(ex.Count - 6);
+
+                                //Add the usernames from the list; first name needs to get the colon at the start stripped.
+                                userList.Add(Util.MessageRegex.Match(ex[5]).Value, new ChannelUser());
+                                foreach (string userName in ex.GetRange(6, ex.Count - 6))
+                                {
+                                    userList.Add(userName, new ChannelUser());
+                                }
+
+                                //Set it in the dictionary
+                                Channels[ex[4].ToLower()].Users = userList;
+                            }
+                        }
+                    }
+                }
+
+                if (ex.Count > 5)
+                {
+                    if (Util.HostMaskRegex.IsMatch(ex[4]))
+                    {
+                        if (Channels.ContainsKey(ex[3].ToLower()))
+                        {
+                            Channels[ex[3].ToLower()].MotdSetter = new ChannelUser(hostMask: ex[4]);
+                            Channels[ex[3].ToLower()].MotdSetDate = new DateTime(long.Parse(ex[5]));
+
+                            Console.WriteLine("Motd of " + ex[3] + " was set by " + Util.NickRegex.Match(ex[4]) + " at " + Channels[ex[3].ToLower()].MotdSetDate.Hour + ":" + Channels[ex[3].ToLower()].MotdSetDate.Minute + " on " + Channels[ex[3].ToLower()].MotdSetDate.Day + "." + Channels[ex[3].ToLower()].MotdSetDate.Month + "." + Channels[ex[3].ToLower()].MotdSetDate.Year);
+                        }
+                    }
+                }
+
+                if (ex.Count > 4)
+                {
+                    if (Util.MessageRegex.IsMatch(ex[4]) && ex[4] != ":End")
+                    {
+                        if (Channels.ContainsKey(ex[3].ToLower()))
+                        {
+                            Channels[ex[3].ToLower()].Motd = Util.MessageRegex.Match(ex[4] + " " + Util.JoinStringList(ex, " ", 5)).Value;
+
+                            Console.WriteLine("Motd of " + ex[3] + " is: " + Channels[ex[3].ToLower()].Motd);
+                        }
+                    }
+                }
+
+                if (ex.Count == 3)
+                {
+                    if (ex[1] == "JOIN")
+                    {
+                        if (Channels.ContainsKey(ex[2].ToLower()))
+                        {
+                            Channels[ex[2].ToLower()].Users.Add(Util.NickRegex.Match(ex[0]).Value, new ChannelUser(hostMask: Util.HostMaskRegex.Match(ex[0]).Value));
+
+                            Console.WriteLine(ex[2] + " " + Util.NickRegex.Match(ex[0]).Value + " joined the channel.");
+                        }
+                    }
+                }
+
+                if (ex.Count > 2)
+                {
+                    if (ex[1] == "PART")
+                    {
+                        Channels[ex[2].ToLower()].Users.Remove(Util.NickRegex.Match(ex[0]).Value);
+
+                        Console.WriteLine(ex[2] + " " + Util.NickRegex.Match(ex[0]).Value + " left the channel.");
+                    }
+                    else if (ex[1] == "QUIT")
+                    {
+                        foreach (string channel in Channels.Keys)
+                        {
+                            Channels[channel].Users.Remove(Util.NickRegex.Match(ex[0]).Value);
+                        }
+
+                        Console.WriteLine(Util.NickRegex.Match(ex[0]).Value + " left the server.");
+                    }
+                }
+
             }
 
             if (ex.Count > 3 || console)
@@ -227,7 +332,6 @@ namespace Kiwana.Core
                 //Print input from server
                 if (!console)
                 {
-                    //Console.WriteLine(Util.JoinStringList(ex, " "));
                     if (Util.NickRegex.IsMatch(ex[0]))
                     {
                         Console.WriteLine(ex[2] + " <" + Util.NickRegex.Match(ex[0]) + "!" + Util.NameRegex.Match(ex[0]) + "> " + Util.MessageRegex.Match(ex[3]) + " " + Util.JoinStringList(ex, " ", 4));
@@ -239,10 +343,6 @@ namespace Kiwana.Core
                     else if (Util.MessageRegex.IsMatch(Util.JoinStringList(ex, " ", 4)))
                     {
                         Console.WriteLine(Util.MessageRegex.Match(Util.JoinStringList(ex, " ", 4)));
-                    }
-                    else
-                    {
-                        Console.WriteLine(Util.JoinStringList(ex, " "));
                     }
                 }
 
@@ -270,23 +370,30 @@ namespace Kiwana.Core
                             if (userAuthenticated || console)
                             {
                                 SendData("JOIN", Util.JoinStringList(ex, ",", 4));
+                                foreach (string channel in ex.GetRange(4, ex.Count - 4))
+                                {
+                                    if (!Channels.ContainsKey(channel.ToLower()))
+                                    {
+                                        Channels.Add(channel.ToLower(), new Channel());
+                                    }
+                                }
                             }
                             else
                             {
-                                SendData("PRIVMSG", ex[2] + ":" + Util.NickRegex.Match(ex[0]) + ": You don't have permission to do this.");
+                                SendData("PRIVMSG", ex[2] + " :" + Util.NickRegex.Match(ex[0]) + ": You don't have permission to do this.");
                             }
                             break;
                         case "about":
-                            SendData("PRIVMSG", ex[2] + ":" + _config.About);
+                            SendData("PRIVMSG", ex[2] + " :" + _config.About);
                             break;
                         case "help":
                             string help = "Available commands are: ";
                             help += Util.JoinStringList(_config.Commands.Where(cmd => cmd.ConsoleServer == (console ? ConsoleServer.Console : ConsoleServer.Server) || cmd.ConsoleServer == ConsoleServer.Both).Select(cmd => cmd.Name).ToList(), ", ");
                             help += " . With prefixes: " + Util.JoinStringList(_config.Prefixes, ", ") + " .";
-                            SendData("PRIVMSG", ex[2] + ":" + help.Replace("\\", ""));
+                            SendData("PRIVMSG", ex[2] + " :" + help.Replace("\\", ""));
                             break;
                         case "letmegooglethatforyou":
-                            SendData("PRIVMSG", ex[2] + ":http://lmgtfy.com/?q=" + Util.JoinStringList(ex, "+", 4));
+                            SendData("PRIVMSG", ex[2] + " :http://lmgtfy.com/?q=" + Util.JoinStringList(ex, "+", 4));
                             break;
                         case "nick":
                             if (userAuthenticated || console)
@@ -296,7 +403,7 @@ namespace Kiwana.Core
                             }
                             else
                             {
-                                SendData("PRIVMSG", ex[2] + ":" + Util.NickRegex.Match(ex[0]) + ": You don't have permission to do this.");
+                                SendData("PRIVMSG", ex[2] + " :" + Util.NickRegex.Match(ex[0]) + ": You don't have permission to do this.");
                             }
                             break;
                         case "part":
@@ -306,7 +413,7 @@ namespace Kiwana.Core
                             }
                             else
                             {
-                                SendData("PRIVMSG", ex[2] + ":" + Util.NickRegex.Match(ex[0]) + ": You don't have permission to do this.");
+                                SendData("PRIVMSG", ex[2] + " :" + Util.NickRegex.Match(ex[0]) + ": You don't have permission to do this.");
                             }
                             break;
                         case "quit":
@@ -418,6 +525,8 @@ namespace Kiwana.Core
                 plugin.Instance.Disable();
                 Console.WriteLine("OK");
             }
+
+            Console.WriteLine("Bot stopped.");
         }
 
         public delegate void NewLineHandler(List<string> ex, string command, bool userAuthenticated, bool console);
