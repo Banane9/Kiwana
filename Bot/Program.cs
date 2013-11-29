@@ -14,7 +14,7 @@ namespace Kiwana.ConsoleApplication
     {
         static void Main(string[] arg)
         {
-            Client client = new Client("BotConfig.xml");
+            Client client = new Client("Config/BotConfig.xml");
 
             Task bot = Task.Run(() => client.Work());
 

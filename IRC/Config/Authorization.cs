@@ -19,6 +19,6 @@ namespace Kiwana.Core.Config
 
         [XmlArray("AutherizedUsers")]
         [XmlArrayItem("User")]
-        public List<string> Users { get; set; }
+        public List<string> AuthorizedUsers { get; set; }
     }
 }

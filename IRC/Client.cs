@@ -312,7 +312,7 @@ namespace Kiwana.Core
                         case "quit":
                             if (userAuthenticated || console)
                             {
-                                SendData("QUIT", ":" + Util.JoinStringList(ex, " ", 4);
+                                SendData("QUIT", ":" + Util.JoinStringList(ex, " ", 4));
                             }
                             else
                             {
@@ -371,7 +371,7 @@ namespace Kiwana.Core
         private bool _canDoCommand(string name)
         {
             bool inList = false;
-            foreach (string user in _config.Users)
+            foreach (string user in _config.Authorization.AuthorizedUsers)
             {
                 if (user == name)
                 {
