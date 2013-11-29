@@ -24,7 +24,7 @@
         <xs:element name="PluginFolders">
           <xs:complexType>
             <xs:sequence>
-              <xs:element maxOccurs="unbounded" name="PluginFolder" type="xs:string" />
+              <xs:element name="PluginFolder" type="xs:string" />
             </xs:sequence>
           </xs:complexType>
         </xs:element>
@@ -58,10 +58,28 @@
             </xs:sequence>
           </xs:complexType>
         </xs:element>
-        <xs:element name="Users">
+        <xs:element name="Authorization">
           <xs:complexType>
             <xs:sequence>
-              <xs:element maxOccurs="unbounded" name="User" type="xs:string" />
+              <xs:element name="Authorizer">
+                <xs:complexType>
+                  <xs:sequence>
+                    <xs:element name="Nick" type="xs:string" />
+                    <xs:element name="Name" type="xs:string" />
+                    <xs:element name="Host" type="xs:string" />
+                  </xs:sequence>
+                </xs:complexType>
+              </xs:element>
+              <xs:element name="AuthorizationCode" type="xs:unsignedByte" />
+              <xs:element name="MessagePosition" type="xs:unsignedByte" />
+              <xs:element name="MessageLength" type="xs:unsignedByte" />
+              <xs:element name="AutherizedUsers">
+                <xs:complexType>
+                  <xs:sequence>
+                    <xs:element maxOccurs="unbounded" name="User" type="xs:string" />
+                  </xs:sequence>
+                </xs:complexType>
+              </xs:element>
             </xs:sequence>
           </xs:complexType>
         </xs:element>

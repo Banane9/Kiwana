@@ -18,6 +18,7 @@ namespace Kiwana.Core
     public class Client
     {
         public bool Initialized = false;
+        public bool Running = true;
 
         private TcpClient _ircConnection;
         private BotConfig _config;
@@ -25,7 +26,7 @@ namespace Kiwana.Core
         private StreamReader _streamReader;
         private StreamWriter _streamWriter;
 
-        private List<Kiwana.Core.Plugins.KPlugin> _plugins = new List<Plugins.KPlugin>();
+        private List<Kiwana.Core.Plugins.PluginInformation> _plugins = new List<Plugins.PluginInformation>();
 
         public List<Channel> Channels { get; set; }
 
@@ -35,8 +36,6 @@ namespace Kiwana.Core
 
         private Random random = new Random();
 
-        private bool _shouldRun = true;
-
         public Client(string config)
         {
             XmlSerializer serializer = new XmlSerializer(typeof(BotConfig));
@@ -44,7 +43,7 @@ namespace Kiwana.Core
             _config = (BotConfig)serializer.Deserialize(reader);
         }
 
-        public async Task<bool> Init()
+        public void Init()
         {
             foreach (string pluginFolder in _config.PluginFolders)
             {
@@ -52,7 +51,7 @@ namespace Kiwana.Core
             }
 
             Console.WriteLine("Initializing Plugins ...");
-            foreach (KPlugin plugin in _plugins)
+            foreach (PluginInformation plugin in _plugins)
             {
                 Console.Write("  - " + plugin.Name + " ... ");
                 try
@@ -69,7 +68,9 @@ namespace Kiwana.Core
 
             _prefixRegex = new Regex(@"(?<=" + Util.JoinStringList(_config.Prefixes, "|") + ").+");
 
-            foreach (Kiwana.Core.Plugins.KPlugin plugin in _plugins)
+            //Add all the listeners to the NewLine event
+            NewLine += _handleLine;
+            foreach (PluginInformation plugin in _plugins)
             {
                 _config.Commands.AddRange(plugin.Config.Commands);
                 plugin.Instance.SendDataEvent += SendData;
@@ -113,31 +114,7 @@ namespace Kiwana.Core
             _serverCommandRegex = new Regex(serverCommandRegex);
             _consoleCommandRegex = new Regex(consoleCommandRegex);
 
-            try
-            {
-                _ircConnection = new TcpClient(_config.Server.Url, _config.Server.Port);
-            }
-            catch
-            {
-                Console.WriteLine("Connection Error");
-            }
-
-            try
-            {
-                _networkStream = _ircConnection.GetStream();
-                _streamReader = new StreamReader(_networkStream);
-                _streamWriter = new StreamWriter(_networkStream);
-
-                SendData("PASS", _config.Server.User.Password);
-                SendData("NICK", _config.Server.User.Name);
-                SendData("USER", _config.Server.User.Nick + " Banane 9 :" + _config.Server.User.Name);
-            }
-            catch
-            {
-                Console.WriteLine("Communication Error");
-            }
-
-            return true;
+            Initialized = true;
         }
 
         public void SendData(string command, string argument = "")
@@ -160,12 +137,31 @@ namespace Kiwana.Core
         {
             if (!Initialized)
             {
-                Initialized = await Init();
+                Init();
+            }
+
+            Console.WriteLine("Trying to establish Connection to " + _config.Server.Url + ":" + _config.Server.Port + " ... ");
+            try
+            {
+                _ircConnection = new TcpClient(_config.Server.Url, _config.Server.Port);
+                _networkStream = _ircConnection.GetStream();
+                _streamReader = new StreamReader(_networkStream);
+                _streamWriter = new StreamWriter(_networkStream);
+
+                SendData("PASS", _config.Server.User.Password);
+                SendData("NICK", _config.Server.User.Name);
+                SendData("USER", _config.Server.User.Nick + " Owner Banane9 :" + _config.Server.User.Name);
+
+                Console.WriteLine("Success");
+                Running = true;
+            }
+            catch
+            {
+                Console.WriteLine("Failure");
+                Running = false;
             }
             
-            _shouldRun = true;
-            
-            while(_shouldRun)
+            while(Running)
             {
                 ParseLine(_streamReader.ReadLine());
             }
@@ -234,7 +230,7 @@ namespace Kiwana.Core
                     //Console.WriteLine(Util.JoinStringList(ex, " "));
                     if (Util.NickRegex.IsMatch(ex[0]))
                     {
-                        Console.WriteLine(ex[2] /*+ " " + ex[1]*/ + " <" + Util.NickRegex.Match(ex[0]) + "!" + Util.NameRegex.Match(ex[0]) + "> " + Util.MessageRegex.Match(ex[3]) + " " + Util.JoinStringList(ex, " ", 4));
+                        Console.WriteLine(ex[2] + " <" + Util.NickRegex.Match(ex[0]) + "!" + Util.NameRegex.Match(ex[0]) + "> " + Util.MessageRegex.Match(ex[3]) + " " + Util.JoinStringList(ex, " ", 4));
                     }
                     else if (Util.MessageRegex.IsMatch(ex[3]))
                     {
@@ -258,87 +254,76 @@ namespace Kiwana.Core
                 }
 
                 NewLine(ex, normalizedCommand, false, console);
+            }
+        }
 
+        private void _handleLine(List<string> ex, string command, bool userAuthenticated, bool console)
+        {
+            if (ex.Count > 3)
+            {
                 //Commands with arguments
                 if (ex.Count > 4)
                 {
-                    switch (normalizedCommand)
+                    switch (command)
                     {
                         case "join":
-                            if (_canDoCommand(Util.NickRegex.Match(ex[0]).Value) || console)
+                            if (userAuthenticated || console)
                             {
                                 SendData("JOIN", Util.JoinStringList(ex, ",", 4));
                             }
                             else
                             {
-                                SendData("PRIVMSG", ex[2] + " :" + Util.NickRegex.Match(ex[0]) + ": You don't have permission to do this.");
+                                SendData("PRIVMSG", ex[2] + ":" + Util.NickRegex.Match(ex[0]) + ": You don't have permission to do this.");
                             }
                             break;
                         case "about":
-                            SendData("PRIVMSG", ex[2] + " :" + _config.About);
+                            SendData("PRIVMSG", ex[2] + ":" + _config.About);
                             break;
                         case "help":
                             string help = "Available commands are: ";
                             help += Util.JoinStringList(_config.Commands.Where(cmd => cmd.ConsoleServer == (console ? ConsoleServer.Console : ConsoleServer.Server) || cmd.ConsoleServer == ConsoleServer.Both).Select(cmd => cmd.Name).ToList(), ", ");
                             help += " . With prefixes: " + Util.JoinStringList(_config.Prefixes, ", ") + " .";
-                            SendData("PRIVMSG", ex[2] + " :" + help.Replace("\\", ""));
+                            SendData("PRIVMSG", ex[2] + ":" + help.Replace("\\", ""));
                             break;
                         case "letmegooglethatforyou":
-                            SendData("PRIVMSG", ex[2] + " :http://lmgtfy.com/?q=" + Util.JoinStringList(ex, "+", 4));
+                            SendData("PRIVMSG", ex[2] + ":http://lmgtfy.com/?q=" + Util.JoinStringList(ex, "+", 4));
                             break;
                         case "nick":
-                            if (_canDoCommand(Util.NickRegex.Match(ex[0]).Value) || console)
+                            if (userAuthenticated || console)
                             {
                                 SendData("NICK", Util.JoinStringList(ex, "_", 4));
                                 _config.Server.User.Nick = Util.JoinStringList(ex, "_", 4);
                             }
                             else
                             {
-                                SendData("PRIVMSG", ex[2] + " :" + Util.NickRegex.Match(ex[0]) + ": You don't have permission to do this.");
-                            }
-                            break;
-                        case "raw":
-                            if (_canDoCommand(Util.NickRegex.Match(ex[0]).Value) || console)
-                            {
-                                if (ex[4].ToLower() == "quit")
-                                {
-                                    Quit(Util.JoinStringList(ex, " ", 4));
-                                }
-                                else
-                                {
-                                    SendData(Util.JoinStringList(ex, " ", 4));
-                                }
-                            }
-                            else
-                            {
-                                SendData("PRIVMSG", ex[2] + " :" + Util.NickRegex.Match(ex[0]) + ": You don't have permission to do this.");
+                                SendData("PRIVMSG", ex[2] + ":" + Util.NickRegex.Match(ex[0]) + ": You don't have permission to do this.");
                             }
                             break;
                         case "part":
-                            if (_canDoCommand(Util.NickRegex.Match(ex[0]).Value) || console)
+                            if (userAuthenticated || console)
                             {
                                 SendData("PART", Util.JoinStringList(ex, ",", 4));
                             }
                             else
                             {
-                                SendData("PRIVMSG", ex[2] + " :" + Util.NickRegex.Match(ex[0]) + ": You don't have permission to do this.");
+                                SendData("PRIVMSG", ex[2] + ":" + Util.NickRegex.Match(ex[0]) + ": You don't have permission to do this.");
                             }
                             break;
                         case "quit":
-                            if (_canDoCommand(Util.NickRegex.Match(ex[0]).Value) || console)
+                            if (userAuthenticated || console)
                             {
-                                Quit(Util.JoinStringList(ex, " ", 4));
+                                SendData("QUIT", ":" + Util.JoinStringList(ex, " ", 4);
                             }
                             else
                             {
-                                SendData("PRIVMSG", ex[2] + " :" + Util.NickRegex.Match(ex[0]) + ": You don't have permission to do this.");
+                                SendData("PRIVMSG", ":" + Util.NickRegex.Match(ex[0]) + ": You don't have permission to do this.");
                             }
                             break;
                     }
                 }
                 else //Commands without arguments
                 {
-                    switch (normalizedCommand)
+                    switch (command)
                     {
                         case "about":
                             SendData("PRIVMSG", ex[2] + " :" + _config.About);
@@ -346,7 +331,7 @@ namespace Kiwana.Core
                         case "help":
                             string help = "Available commands are: ";
                             help += Util.JoinStringList(_config.Commands.Where(cmd => cmd.ConsoleServer == (console ? ConsoleServer.Console : ConsoleServer.Server) || cmd.ConsoleServer == ConsoleServer.Both).Select(cmd => cmd.Name).ToList(), ", ") + ", ";
-                            foreach (KPlugin plugin in _plugins)
+                            foreach (PluginInformation plugin in _plugins)
                             {
                                 help += Util.JoinStringList(plugin.Config.Commands.Where(cmd => cmd.ConsoleServer == (console ? ConsoleServer.Console : ConsoleServer.Server) || cmd.ConsoleServer == ConsoleServer.Both).Select(cmd => cmd.Name).ToList(), ", ");
                             }
@@ -359,7 +344,7 @@ namespace Kiwana.Core
                             SendData("PRIVMSG", ex[2] + " :" + plugins + ".");
                             break;
                         case "part":
-                            if (_canDoCommand(Util.NickRegex.Match(ex[0]).Value) || console)
+                            if (userAuthenticated || console)
                             {
                                 SendData("PART", ex[2]);
                             }
@@ -369,7 +354,7 @@ namespace Kiwana.Core
                             }
                             break;
                         case "quit":
-                            if (_canDoCommand(Util.NickRegex.Match(ex[0]).Value) || console)
+                            if (userAuthenticated || console)
                             {
                                 Quit();
                             }
@@ -423,11 +408,11 @@ namespace Kiwana.Core
 
         private void Quit(string message = "")
         {
-            _shouldRun = false;
+            Running = false;
             SendData("QUIT", message);
 
             Console.WriteLine("Disabling plugins ...");
-            foreach (Kiwana.Core.Plugins.KPlugin plugin in _plugins)
+            foreach (Kiwana.Core.Plugins.PluginInformation plugin in _plugins)
             {
                 Console.Write("  - " + plugin.Name + " ... ");
                 plugin.Instance.Disable();

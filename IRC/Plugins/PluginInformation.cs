@@ -3,7 +3,7 @@ using Kiwana.Core.Config;
 
 namespace Kiwana.Core.Plugins
 {
-    public class KPlugin
+    public class PluginInformation
     {
         public string Name { get; set; }
 

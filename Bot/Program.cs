@@ -20,8 +20,14 @@ namespace Kiwana.ConsoleApplication
 
             while (!bot.IsCompleted)
             {
-                client.ParseLine(Console.ReadLine(), true);
+                string input = Console.ReadLine();
+                if (!bot.IsCompleted)
+                {
+                    client.ParseLine(input, true);
+                }
             }
+
+            Console.WriteLine("Press Enter to close the Command Line");
             Console.ReadLine();
         }
     }

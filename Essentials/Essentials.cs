@@ -30,6 +30,32 @@ namespace Essentials
                             SendData("PRIVMSG", ex[2] + " :" + Util.NickRegex.Match(ex[0]) + ": You don't have permission to do this.");
                         }
                         break;
+                    case "raw":
+                        if (userAuthenticated || console)
+                        {
+                            if (ex[4].ToLower() == "quit")
+                            {
+                                SendData("PRIVMSG", ex[2] + " :Use the quit command for this.");
+                            }
+                            else
+                            {
+                                SendData(Util.JoinStringList(ex, " ", 4));
+                            }
+                        }
+                        else
+                        {
+                            SendData("PRIVMSG", ex[2] + " :" + Util.NickRegex.Match(ex[0]) + ": You don't have permission to do this.");
+                        }
+                        break;
+                }
+            }
+            else
+            {
+                switch (command)
+                {
+                    case "ping":
+                        SendData("PRIVMSG", ex[2] + " :pong!");
+                        break;
                 }
             }
         }

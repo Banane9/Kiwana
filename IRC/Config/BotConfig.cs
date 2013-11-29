@@ -20,9 +20,7 @@ namespace Kiwana.Core.Config
         [XmlArrayItem("Prefix")]
         public List<string> Prefixes { get; set; }
 
-        [XmlArray("Users")]
-        [XmlArrayItem("User")]
-        public List<string> Users { get; set; }
+        public Authorization Authorization { get; set; }
 
         public string About { get; set; }
     }

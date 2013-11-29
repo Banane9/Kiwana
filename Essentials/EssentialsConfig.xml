@@ -11,5 +11,9 @@
       <Alias>t</Alias>
     </Command>
     <Command Name="me" ConsoleServer="Server"/>
+    <Command Name="ping" ConsoleServer="Server"/>
+    <Command Name="raw" ConsoleServer="Both">
+      <Alias>r</Alias>
+    </Command>
   </Commands>
 </PluginConfig>

@@ -15,9 +15,9 @@ namespace Kiwana.Core.Plugins
     {
         private static XmlSerializer _pluginConfigSerializer = new XmlSerializer(typeof(PluginConfig));
 
-        public static List<KPlugin> ScanPluginFolder(string folder)
+        public static List<PluginInformation> ScanPluginFolder(string folder)
         {
-            List<KPlugin> plugins = new List<KPlugin>();
+            List<PluginInformation> plugins = new List<PluginInformation>();
 
             if (Directory.Exists(folder))
             {
@@ -30,7 +30,7 @@ namespace Kiwana.Core.Plugins
                     {
                         if (type.IsSubclassOf(typeof(Plugin)))
                         {
-                            KPlugin plugin = new KPlugin();
+                            PluginInformation plugin = new PluginInformation();
                             plugin.Name = type.Name;
 
                             XmlReader reader = XmlReader.Create(folder + "/" + plugin.Name + "Config.xml");

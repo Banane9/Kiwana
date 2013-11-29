@@ -1,28 +1,22 @@
 ﻿<?xml version="1.0" encoding="utf-8" ?>
 <BotConfig>
-  <Server Name="IRC Server">
+  <Server Name="IrcServer">
     <Url>irc.server.net</Url>
     <Port>6667</Port>
     <User>
       <Nick>Kiwana</Nick>
       <Name>Kiwana</Name>
-      <Password>password</Password>
+      <Password>Password</Password>
     </User>
   </Server>
+  <PluginFolders>
+    <PluginFolder>Plugins</PluginFolder>
+  </PluginFolders>
   <Commands>
     <Command Name="quit" ConsoleServer="Both">
       <Alias>die</Alias>
       <Alias>q</Alias>
       <Alias>d</Alias>
-    </Command>
-    <Command Name="say" ConsoleServer="Server">
-      <Alias>s</Alias>
-    </Command>
-    <Command Name="tell" ConsoleServer="Both">
-      <Alias>msg</Alias>
-      <Alias>message</Alias>
-      <Alias>m</Alias>
-      <Alias>t</Alias>
     </Command>
     <Command Name="part" ConsoleServer="Both">
       <Alias>leave</Alias>
@@ -37,9 +31,6 @@
     <Command Name="nick" ConsoleServer="Both">
       <Alias>n</Alias>
     </Command>
-    <Command Name="raw" ConsoleServer="Both">
-      <Alias>r</Alias>
-    </Command>
     <Command Name="letmegooglethatforyou" ConsoleServer="Server">
       <Alias>lmgtfy</Alias>
     </Command>
@@ -49,15 +40,7 @@
     <Command Name="about" ConsoleServer="Both">
       <Alias>a</Alias>
     </Command>
-    <Command Name="random" ConsoleServer="Server">
-      <Alias>rand</Alias>
-    </Command>
-    <Command Name="tosscoin" ConsoleServer="Server">
-      <Alias>toss</Alias>
-      <Alias>coin</Alias>
-    </Command>
-    <Command Name="dice" ConsoleServer="Server">
-      <Alias>hexahedron</Alias>
+    <Command Name="plugins" ConsoleServer="Both">
     </Command>
   </Commands>
   <Prefixes>
@@ -69,8 +52,19 @@
     <Prefix>&amp;</Prefix>
     <Prefix>\?</Prefix>
   </Prefixes>
-  <Users>
-    <User>Banane9</User>
-  </Users>
-  <About>I'm Banane9's C# Bot. Use the help command to find out what commands I support.</About>
+  <Authorization>
+    <Authorizer>
+      <Nick>NickServ</Nick>
+      <Name>NickServ</Name>
+      <Host>services.server.net</Host>
+    </Authorizer>
+    <AuthorizationCode>3</AuthorizationCode>
+    <MessagePosition>5</MessagePosition>
+    <MessageLength>6</MessageLength>
+    <AutherizedUsers>
+      <User>YourUserName</User>
+      <User>YourFriend'sUserName</User>
+    </AutherizedUsers>
+  </Authorization>
+  <About>I'm a C# Bot. Use the help command to find out what commands I support.</About>
 </BotConfig>

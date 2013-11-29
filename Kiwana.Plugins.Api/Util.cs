@@ -19,7 +19,12 @@ namespace Kiwana.Core.Api
         public static Regex NameRegex = new Regex(@"(?<=!|!~)[^~].+(?=@)");
 
         /// <summary>
-        /// Matches the Message and Motd format. :Message in ex[0] for motd and in starting at ex[3] for message.
+        /// Matches the host of the user from :nick!name@host.com in ex[0]
+        /// </summary>
+        public static Regex HostRegex = new Regex(@"(?<=@).+");
+
+        /// <summary>
+        /// Matches the Message and Motd format. :Message in ex[0] for motd and starting at ex[3] for message.
         /// </summary>
         public static Regex MessageRegex = new Regex(@"(?<=\:).+");
 

@@ -44,6 +44,8 @@
   <ItemGroup>
     <Compile Include="Client.cs" />
     <Compile Include="Commands\McStatus.cs" />
+    <Compile Include="Config\Authorization.cs" />
+    <Compile Include="Config\Authorizer.cs" />
     <Compile Include="Config\BotConfig.cs" />
     <Compile Include="Config\Command.cs" />
     <Compile Include="Config\ConsoleServer.cs" />
@@ -52,13 +54,16 @@
     <Compile Include="Objects\Channel.cs" />
     <Compile Include="Objects\User.cs" />
     <Compile Include="Config\PluginConfig.cs" />
-    <Compile Include="Plugins\KPlugin.cs" />
+    <Compile Include="Plugins\PluginInformation.cs" />
     <Compile Include="Plugins\PluginInitializationFailedException.cs" />
     <Compile Include="Plugins\PluginManager.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />
+    <None Include="Config\BotConfig.xsd">
+      <SubType>Designer</SubType>
+    </None>
     <None Include="Config\PluginConfig.xsd">
       <SubType>Designer</SubType>
     </None>
@@ -68,6 +73,16 @@
       <Project>{f7c70fc8-ca2b-459f-9764-e8489ff71542}</Project>
       <Name>Kiwana.Core.Api</Name>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="Config\BotConfig.xml">
+      <SubType>Designer</SubType>
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Config\ExampleBotConfig.xml">
+      <SubType>Designer</SubType>
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
