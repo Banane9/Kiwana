@@ -1,5 +1,4 @@
-﻿using Kiwana.Core.Commands;
-using Kiwana.Core.Config;
+﻿using Kiwana.Core.Config;
 using Kiwana.Core.Objects;
 using Kiwana.Core.Api;
 using System;
@@ -26,7 +25,7 @@ namespace Kiwana.Core
         private StreamReader _streamReader;
         private StreamWriter _streamWriter;
 
-        private List<Kiwana.Core.Plugins.PluginInformation> _plugins = new List<Plugins.PluginInformation>();
+        private List<PluginInformation> _plugins = new List<PluginInformation>();
 
         public Dictionary<string, Channel> Channels = new Dictionary<string, Channel>();
 
