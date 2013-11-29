@@ -1,16 +1,15 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 
-namespace IRC.Objects
+namespace Kiwana.Core.Plugins
 {
-    public class User
+    public class Plugin
     {
         public string Name { get; set; }
 
-        public string Nick { get; set; }
-
-        public bool Authenticated { get; set; }
+        //public Assembly
     }
 }

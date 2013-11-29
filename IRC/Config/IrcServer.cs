@@ -1,7 +1,7 @@
 ﻿using System.Collections.ObjectModel;
 using System.Xml.Serialization;
 
-namespace IRC.Config
+namespace Kiwana.Core.Config
 {
     [XmlRoot("Server")]
     public class IrcServer

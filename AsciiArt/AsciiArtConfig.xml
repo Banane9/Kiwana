@@ -1,0 +1,6 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<PluginConfig>
+  <Commands>
+    <Command Name="doge" ConsoleServer="Server"/>
+  </Commands>
+</PluginConfig>

@@ -1,34 +1,30 @@
-﻿using IRC;
-using IRC.Config;
+﻿using Kiwana.Core;
+using Kiwana.Core.Config;
+using Kiwana.Core.Plugins;
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
 using System.Xml;
 using System.Xml.Serialization;
 
-namespace Bot
+namespace Kiwana.ConsoleApplication
 {
     class Program
     {
         static void Main(string[] arg)
         {
-            XmlSerializer serializer = new XmlSerializer(typeof(BotConfig));
-            XmlReader reader = XmlReader.Create("BotConfig.xml");
-            BotConfig botConfig = (BotConfig)serializer.Deserialize(reader);
+            Client client = new Client("Config/BotConfig.xml");
 
-            //Console.WriteLine("Name: " + botConfig.Commands[0].Name);
-            //foreach (string alias in botConfig.Commands[0].Alias)
-            //{
-            //    Console.WriteLine("Alias: " + alias);
-            //}
+            Task bot = Task.Run(() => client.Work());
 
-            Client client = new Client(botConfig);
-
-            Task bot = Task.Run(() => { client.Work(); });
-
-            while (!bot.IsCompleted)
+            while (client.Running)
             {
-                client.ParseLine(Console.ReadLine(), true);
+                string input = Console.ReadLine();
+                if (client.Running)
+                {
+                    client.ParseLine(input, true);
+                }
             }
         }
     }

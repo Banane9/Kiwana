@@ -1,41 +1,80 @@
-﻿using IRC.Commands;
-using IRC.Config;
+﻿using Kiwana.Core.Config;
+using Kiwana.Core.Objects;
+using Kiwana.Core.Api;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net.Sockets;
-using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using Kiwana.Core.Plugins;
+using System.Xml.Serialization;
+using System.Xml;
 
-namespace IRC
+namespace Kiwana.Core
 {
     public class Client
     {
+        public bool Initialized = false;
+        public bool Running = true;
+
         private TcpClient _ircConnection;
         private BotConfig _config;
         private NetworkStream _networkStream;
         private StreamReader _streamReader;
         private StreamWriter _streamWriter;
 
+        private List<PluginInformation> _plugins = new List<PluginInformation>();
+
+        public Dictionary<string, Channel> Channels = new Dictionary<string, Channel>();
+
         private Regex _prefixRegex;
         private Regex _serverCommandRegex;
         private Regex _consoleCommandRegex;
-        private Regex _nickRegex = new Regex(@"(?<=\:).+(?=\!)");
-        private Regex _nameRegex = new Regex(@"(?<=!|!~)[^~].+(?=@)");
-        private Regex _motdRegex = new Regex(@"(?<=\:).+");
-        private Regex _messageRegex = new Regex(@"(?<=\:).+");
 
         private Random random = new Random();
 
-        private bool _shouldRun = true;
-
-        public Client(BotConfig config)
+        public Client(string config)
         {
-            _config = config;
+            XmlSerializer serializer = new XmlSerializer(typeof(BotConfig));
+            XmlReader reader = XmlReader.Create(config);
+            _config = (BotConfig)serializer.Deserialize(reader);
+        }
 
-            _prefixRegex = new Regex(@"(?<=" + _joinStringArray(_config.Prefixes, "|") + ").+");
+        public void Init()
+        {
+            foreach (string pluginFolder in _config.PluginFolders)
+            {
+                _plugins.AddRange(PluginManager.ScanPluginFolder(pluginFolder));
+            }
+
+            Console.WriteLine("Initializing Plugins ...");
+            foreach (PluginInformation plugin in _plugins)
+            {
+                Console.Write("  - " + plugin.Name + " ... ");
+                try
+                {
+                    plugin.Instance.Init();
+                    Console.WriteLine("OK");
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine("Failure");
+                    throw new PluginInitializationFailedException("Plugin " + plugin.Name + " failed initalization.", e);
+                }
+            }
+
+            _prefixRegex = new Regex(@"(?<=" + Util.JoinStringList(_config.Prefixes, "|") + ").+");
+
+            //Add all the listeners to the NewLine event
+            NewLine += _handleLine;
+            foreach (PluginInformation plugin in _plugins)
+            {
+                _config.Commands.AddRange(plugin.Config.Commands);
+                plugin.Instance.SendDataEvent += SendData;
+                NewLine += plugin.Instance.HandleLine;
+            }
 
             string serverCommandRegex = @"";
             string consoleCommandRegex = @"";
@@ -46,7 +85,7 @@ namespace IRC
                 if (command.ConsoleServer == ConsoleServer.Server || command.ConsoleServer == ConsoleServer.Both)
                 {
                     serverCommandRegex += command.Name + "|";
-                    string alias = _joinStringArray(command.Alias, "|");
+                    string alias = Util.JoinStringList(command.Alias, "|");
                     if (!String.IsNullOrEmpty(alias))
                     {
                         serverCommandRegex += alias;
@@ -60,7 +99,7 @@ namespace IRC
                 if (command.ConsoleServer == ConsoleServer.Console || command.ConsoleServer == ConsoleServer.Both)
                 {
                     consoleCommandRegex += command.Name + "|";
-                    string alias = _joinStringArray(command.Alias, "|");
+                    string alias = Util.JoinStringList(command.Alias, "|");
                     if (!String.IsNullOrEmpty(alias))
                     {
                         consoleCommandRegex += alias;
@@ -74,29 +113,7 @@ namespace IRC
             _serverCommandRegex = new Regex(serverCommandRegex);
             _consoleCommandRegex = new Regex(consoleCommandRegex);
 
-            try
-            {
-                _ircConnection = new TcpClient(_config.Server.Url, _config.Server.Port);
-            }
-            catch
-            {
-                Console.WriteLine("Connection Error");
-            }
-
-            try
-            {
-                _networkStream = _ircConnection.GetStream();
-                _streamReader = new StreamReader(_networkStream);
-                _streamWriter = new StreamWriter(_networkStream);
-
-                SendData("PASS", _config.Server.User.Password);
-                SendData("NICK", _config.Server.User.Name);
-                SendData("USER", _config.Server.User.Nick + " Banane 9 :" + _config.Server.User.Name);
-            }
-            catch
-            {
-                Console.WriteLine("Communication Error");
-            }
+            Initialized = true;
         }
 
         public void SendData(string command, string argument = "")
@@ -115,24 +132,186 @@ namespace IRC
             Console.WriteLine(command + " " + argument);
         }
 
-        public void Work()
+        public async Task Work()
         {
-            _shouldRun = true;
-            
-            while(_shouldRun)
+            if (!Initialized)
             {
-                ParseLine(_streamReader.ReadLine());
+                Init();
             }
+
+            Console.WriteLine("Trying to establish Connection to " + _config.Server.Url + ":" + _config.Server.Port + " ... ");
+            try
+            {
+                _ircConnection = new TcpClient(_config.Server.Url, _config.Server.Port);
+                _networkStream = _ircConnection.GetStream();
+                _streamReader = new StreamReader(_networkStream);
+                _streamWriter = new StreamWriter(_networkStream);
+
+                SendData("PASS", _config.Server.User.Password);
+                SendData("NICK", _config.Server.User.Name);
+                SendData("USER", _config.Server.User.Nick + " Owner Banane9 :" + _config.Server.User.Name);
+
+                Console.WriteLine("Success");
+                Running = true;
+            }
+            catch
+            {
+                Console.WriteLine("Failure");
+                Running = false;
+            }
+            
+            while(Running)
+            {
+                try
+                {
+                    ParseLine(_streamReader.ReadLine());
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine("Exception " + ex.Message);
+                    Console.WriteLine(ex.StackTrace);
+                }
+            }
+        }
+
+        public string GetNormalizedCommand(string cmd, bool console)
+        {
+            string command = "";
+
+            //Is it a valid command from the console or from the server
+            if ((_consoleCommandRegex.IsMatch(cmd) && console) || (_serverCommandRegex.IsMatch(cmd) && !console))
+            {
+                foreach (Command commandToCheck in _config.Commands)
+                {
+                    if (cmd == commandToCheck.Name)
+                    {
+                        command = cmd;
+                        break;
+                    }
+
+                    string regexString = "^(" + Util.JoinStringList(commandToCheck.Alias, "|") + ")$";
+
+                    if (!String.IsNullOrEmpty(regexString))
+                    {
+                        Regex regex = new Regex(regexString);
+                        if (regex.IsMatch(cmd))
+                        {
+                            command = regex.Replace(cmd, commandToCheck.Name);
+                        }
+
+                        if (!String.IsNullOrEmpty(command)) break;
+                    }
+                }
+            }
+
+            return command;
         }
 
         public void ParseLine(string line, bool console = false)
         {
             List<string> ex = line.Split(' ').ToList();
+            //Console.WriteLine(Util.JoinStringList(ex, " "));
 
-            if (ex[0] == "PING")
+            if (ex.Count < 2) return;
+
+            if (!console)
             {
-                Console.WriteLine("PING " + ex[1]);
-                SendData("PONG", ex[1]);
+                if (ex.Count == 2)
+                {
+                    if (ex[0] == "PING")
+                    {
+                        Console.WriteLine("PING " + ex[1]);
+                        SendData("PONG", ex[1]);
+                    }
+                }
+
+                if (ex.Count > 6)
+                {
+                    if (Util.ServerRegex.IsMatch(ex[0]))
+                    {
+                        if (ex[3] == "=")
+                        {
+                            //If the bot is in the channel
+                            if (Channels.ContainsKey(ex[4].ToLower()))
+                            {
+                                Console.WriteLine("Users in " + ex[4] + ": " + Util.MessageRegex.Match(ex[5]).Value + ", " + Util.JoinStringList(ex, ", ", 6));
+
+                                //Dictionary for the Users in the Channel
+                                Dictionary<string, ChannelUser> userList = new Dictionary<string, ChannelUser>(ex.Count - 6);
+
+                                //Add the usernames from the list; first name needs to get the colon at the start stripped.
+                                userList.Add(Util.MessageRegex.Match(ex[5]).Value, new ChannelUser());
+                                foreach (string userName in ex.GetRange(6, ex.Count - 6))
+                                {
+                                    userList.Add(userName, new ChannelUser());
+                                }
+
+                                //Set it in the dictionary
+                                Channels[ex[4].ToLower()].Users = userList;
+                            }
+                        }
+                    }
+                }
+
+                if (ex.Count > 5)
+                {
+                    if (Util.HostMaskRegex.IsMatch(ex[4]))
+                    {
+                        if (Channels.ContainsKey(ex[3].ToLower()))
+                        {
+                            Channels[ex[3].ToLower()].MotdSetter = new ChannelUser(hostMask: ex[4]);
+                            Channels[ex[3].ToLower()].MotdSetDate = new DateTime(long.Parse(ex[5]));
+
+                            Console.WriteLine("Motd of " + ex[3] + " was set by " + Util.NickRegex.Match(ex[4]) + " at " + Channels[ex[3].ToLower()].MotdSetDate.Hour + ":" + Channels[ex[3].ToLower()].MotdSetDate.Minute + " on " + Channels[ex[3].ToLower()].MotdSetDate.Day + "." + Channels[ex[3].ToLower()].MotdSetDate.Month + "." + Channels[ex[3].ToLower()].MotdSetDate.Year);
+                        }
+                    }
+                }
+
+                if (ex.Count > 4)
+                {
+                    if (Util.MessageRegex.IsMatch(ex[4]) && ex[4] != ":End")
+                    {
+                        if (Channels.ContainsKey(ex[3].ToLower()))
+                        {
+                            Channels[ex[3].ToLower()].Motd = Util.MessageRegex.Match(ex[4] + " " + Util.JoinStringList(ex, " ", 5)).Value;
+
+                            Console.WriteLine("Motd of " + ex[3] + " is: " + Channels[ex[3].ToLower()].Motd);
+                        }
+                    }
+                }
+
+                if (ex.Count == 3)
+                {
+                    if (ex[1] == "JOIN")
+                    {
+                        if (Channels.ContainsKey(ex[2].ToLower()))
+                        {
+                            Channels[ex[2].ToLower()].Users.Add(Util.NickRegex.Match(ex[0]).Value, new ChannelUser(hostMask: Util.HostMaskRegex.Match(ex[0]).Value));
+
+                            Console.WriteLine(ex[2] + " " + Util.NickRegex.Match(ex[0]).Value + " joined the channel.");
+                        }
+                    }
+                }
+
+                if (ex.Count > 2)
+                {
+                    if (ex[1] == "PART")
+                    {
+                        Channels[ex[2].ToLower()].Users.Remove(Util.NickRegex.Match(ex[0]).Value);
+
+                        Console.WriteLine(ex[2] + " " + Util.NickRegex.Match(ex[0]).Value + " left the channel.");
+                    }
+                    else if (ex[1] == "QUIT")
+                    {
+                        foreach (string channel in Channels.Keys)
+                        {
+                            Channels[channel].Users.Remove(Util.NickRegex.Match(ex[0]).Value);
+                        }
+
+                        Console.WriteLine(Util.NickRegex.Match(ex[0]).Value + " left the server.");
+                    }
+                }
+
             }
 
             if (ex.Count > 3 || console)
@@ -152,272 +331,153 @@ namespace IRC
                 //Print input from server
                 if (!console)
                 {
-                    //Console.WriteLine(_joinStringArray(ex, " "));
-                    if (_nickRegex.IsMatch(ex[0]))
+                    if (Util.NickRegex.IsMatch(ex[0]))
                     {
-                        Console.WriteLine(ex[2] /*+ " " + ex[1]*/ + " <" + _nickRegex.Match(ex[0]) + "!" + _nameRegex.Match(ex[0]) + "> " + _messageRegex.Match(ex[3]) + " " + _joinStringArray(ex, " ", 4));
+                        Console.WriteLine(ex[2] + " <" + Util.NickRegex.Match(ex[0]) + "!" + Util.NameRegex.Match(ex[0]) + "> " + Util.MessageRegex.Match(ex[3]) + " " + Util.JoinStringList(ex, " ", 4));
                     }
-                    else if (_motdRegex.IsMatch(ex[3]))
+                    else if (Util.MessageRegex.IsMatch(ex[3]))
                     {
-                        Console.WriteLine(_motdRegex.Match(ex[3]) + " " + _joinStringArray(ex, " ", 4));
+                        Console.WriteLine(Util.MessageRegex.Match(ex[3]) + " " + Util.JoinStringList(ex, " ", 4));
                     }
-                    else if (_messageRegex.IsMatch(_joinStringArray(ex, " ", 4)))
+                    else if (Util.MessageRegex.IsMatch(Util.JoinStringList(ex, " ", 4)))
                     {
-                        Console.WriteLine(_messageRegex.Match(_joinStringArray(ex, " ", 4)));
-                    }
-                    else
-                    {
-                        Console.WriteLine(_joinStringArray(ex, " "));
+                        Console.WriteLine(Util.MessageRegex.Match(Util.JoinStringList(ex, " ", 4)));
                     }
                 }
 
-                //Is it a valid command from the console or from the server
-                if ((_consoleCommandRegex.IsMatch(command) && console) || (_serverCommandRegex.IsMatch(command) && !console))
+                string normalizedCommand = GetNormalizedCommand(command, console);
+
+                if (ex[2] == _config.Server.User.Nick)
                 {
-                    string normalizedCommand = "";
-                    foreach (Command commandToCheck in _config.Commands)
-                    {
-                        if (command == commandToCheck.Name)
-                        {
-                            normalizedCommand = command;
-                            break;
-                        }
-
-                        string regexString = "^(" + _joinStringArray(commandToCheck.Alias, "|") + ")$";
-
-                        if (!String.IsNullOrEmpty(regexString))
-                        {
-                            Regex regex = new Regex(regexString);
-                            if (regex.IsMatch(command))
-                            {
-                                normalizedCommand = regex.Replace(command, commandToCheck.Name);
-                            }
-
-                            if (!String.IsNullOrEmpty(normalizedCommand)) break;
-                        }
-                    }
-
-                    if (ex[2] == _config.Server.User.Nick)
-                    {
-                        ex[2] = _nickRegex.Match(ex[0]).Value;
-                    }
-
-                    //Commands with arguments
-                    if (ex.Count > 4)
-                    {
-                        switch (normalizedCommand)
-                        {
-                            case "join":
-                                if (_canDoCommand(_nickRegex.Match(ex[0]).Value) || console)
-                                {
-                                    SendData("JOIN", _joinStringArray(ex, ",", 4));
-                                }
-                                else
-                                {
-                                    SendData("PRIVMSG", ex[2] + " :" + _nickRegex.Match(ex[0]) + ": You don't have permission to do this.");
-                                }
-                                break;
-                            case "about":
-                                SendData("PRIVMSG", ex[2] + " :" + _config.About);
-                                break;
-                            case "help":
-                                string help = "Available commands are: ";
-                                help += _joinStringArray(_config.Commands.Where(cmd => cmd.ConsoleServer == (console ? ConsoleServer.Console : ConsoleServer.Server) || cmd.ConsoleServer == ConsoleServer.Both).Select(cmd => cmd.Name).ToList(), ", ");
-                                help += " . With prefixes: " + _joinStringArray(_config.Prefixes, ", ") + " .";
-                                SendData("PRIVMSG", ex[2] + " :" + help.Replace("\\", ""));
-                                break;
-                            case "say":
-                                SendData("PRIVMSG", ex[2] + " :" + _joinStringArray(ex, " ", 4)); //channel + *space*: + message
-                                break;
-                            case "letmegooglethatforyou":
-                                SendData("PRIVMSG", ex[2] + " :http://lmgtfy.com/?q=" + _joinStringArray(ex, "+", 4));
-                                break;
-                            case "random":
-                                try
-                                {
-                                    SendData("PRIVMSG", ex[2] + " :" + _nickRegex.Match(ex[0]) + ": " + random.Next(int.Parse(Regex.Match(ex[4], @"\d+").Value), int.Parse(Regex.Match(ex[5], @"\d+").Value)));
-                                }
-                                catch
-                                {
-                                    SendData("PRIVMSG", ex[2] + " :" + _nickRegex.Match(ex[0]) + ": Couldn't parse numbers.");
-                                }
-                                break;
-                            case "dice":
-                                try
-                                {
-                                    int value = 0;
-                                    string nextMode = "+";
-
-                                    if (Regex.IsMatch(_joinStringArray(ex, start: 4), @"\d+((-|\+)\d+)?d\d+(-|\+)?"))
-                                    {
-                                        MatchCollection diceFormulas = Regex.Matches(_joinStringArray(ex, start: 4), @"\d+((-|\+)\d+)?d\d+(-|\+)?");
-                                        foreach (Match diceFormula in diceFormulas)
-                                        {
-                                            Console.WriteLine(diceFormula.Value);
-
-                                            int diceValue = 0;
-
-                                            int dice = int.Parse(Regex.Match(diceFormula.Value, @"^\d+").Value);
-
-                                            int add = 0;
-                                            if (Regex.IsMatch(ex[4], @"(-|\+)\d+(?=d)"))
-                                            {
-                                                add = int.Parse(Regex.Match(diceFormula.Value, @"(-|\+)\d+(?=d)").Value);
-                                            }
-
-                                            int max = int.Parse(Regex.Match(diceFormula.Value, @"(?<=d)\d+").Value);
-
-                                            for (int i = 0; i < dice; i++)
-                                            {
-                                                diceValue += random.Next(1, max);
-                                            }
-
-                                            diceValue += add;
-
-                                            switch (nextMode)
-                                            {
-                                                case "+":
-                                                    value += diceValue;
-                                                    break;
-                                                case "-":
-                                                    value -= diceValue;
-                                                    break;
-                                            }
-
-                                            nextMode = Regex.Match(diceFormula.Value, @"(-|\+)$").Value;
-                                        }
-
-                                        SendData("PRIVMSG", ex[2] + " :" + _nickRegex.Match(ex[0]) + ": " + value);
-                                    }
-                                    else
-                                    {
-                                        SendData("PRIVMSG", ex[2] + " :" + _nickRegex.Match(ex[0]) + ": No valid dice formula found.");
-                                    }
-                                }
-                                catch
-                                {
-                                    SendData("PRIVMSG", ex[2] + " :" + _nickRegex.Match(ex[0]) + ": Couldn't parse dice formula.");
-                                }
-                                break;
-                            case "tell":
-                                if (_canDoCommand(_nickRegex.Match(ex[0]).Value) || console)
-                                {
-                                    SendData("PRIVMSG", ex[4] + " :" + _joinStringArray(ex, " ", 5));
-                                }
-                                else
-                                {
-                                    SendData("PRIVMSG", ex[2] + " :" + _nickRegex.Match(ex[0]) + ": You don't have permission to do this.");
-                                }
-                                break;
-                            case "nick":
-                                if (_canDoCommand(_nickRegex.Match(ex[0]).Value) || console)
-                                {
-                                    SendData("NICK", _joinStringArray(ex, "_", 4));
-                                    _config.Server.User.Nick = _joinStringArray(ex, "_", 4);
-                                }
-                                else
-                                {
-                                    SendData("PRIVMSG", ex[2] + " :" + _nickRegex.Match(ex[0]) + ": You don't have permission to do this.");
-                                }
-                                break;
-                            case "raw":
-                                if (_canDoCommand(_nickRegex.Match(ex[0]).Value) || console)
-                                {
-                                    _shouldRun = ex[4].ToUpper() != "QUIT";
-                                    SendData(_joinStringArray(ex, " ", 4));
-                                }
-                                else
-                                {
-                                    SendData("PRIVMSG", ex[2] + " :" + _nickRegex.Match(ex[0]) + ": You don't have permission to do this.");
-                                }
-                                break;
-                            case "part":
-                                if (_canDoCommand(_nickRegex.Match(ex[0]).Value) || console)
-                                {
-                                    SendData("PART", _joinStringArray(ex, ",", 4));
-                                }
-                                else
-                                {
-                                    SendData("PRIVMSG", ex[2] + " :" + _nickRegex.Match(ex[0]) + ": You don't have permission to do this.");
-                                }
-                                break;
-                            case "quit":
-                                if (_canDoCommand(_nickRegex.Match(ex[0]).Value) || console)
-                                {
-                                    SendData("QUIT", ":" + _joinStringArray(ex, " ", 4));
-                                    _shouldRun = false;
-                                }
-                                else
-                                {
-                                    SendData("PRIVMSG", ex[2] + " :" + _nickRegex.Match(ex[0]) + ": You don't have permission to do this.");
-                                }
-                                break;
-                            default:
-                                SendData("PRIVMSG", ex[2] + " :" + _nickRegex.Match(ex[0]) + ": Command not recognized.");
-                                break;
-                        }
-                    }
-                    else //Commands without arguments
-                    {
-                        switch (normalizedCommand)
-                        {
-                            case "about":
-                                SendData("PRIVMSG", ex[2] + " :" + _config.About);
-                                break;
-                            case "help":
-                                string help = "Available commands are: ";
-                                help += _joinStringArray(_config.Commands.Where(cmd => cmd.ConsoleServer == (console ? ConsoleServer.Console : ConsoleServer.Server) || cmd.ConsoleServer == ConsoleServer.Both).Select(cmd => cmd.Name).ToList(), ", ");
-                                help += " . With prefixes: " + _joinStringArray(_config.Prefixes, ", ") + " .";
-                                SendData("PRIVMSG", ex[2] + " :" + help.Replace("\\", ""));
-                                break;
-                            case "tosscoin":
-                                SendData("PRIVMSG", ex[2] + " :" + _nickRegex.Match(ex[0]) + ": " + (random.Next(1, 3) == 1 ? "Tails" : "Heads"));
-                                break;
-                            case "mcstatus":
-                                SendData("PRIVMSG", ex[2] + " :Retrieving status of Minecraft services...");
-                                _writeMcStatus(ex[2]);
-                                break;
-                            case "part":
-                                if (_canDoCommand(_nickRegex.Match(ex[0]).Value) || console)
-                                {
-                                    SendData("PART", ex[2]);
-                                }
-                                else
-                                {
-                                    SendData("PRIVMSG", ex[2] + " :" + _nickRegex.Match(ex[0]) + ": You don't have permission to do this.");
-                                }
-                                break;
-                            case "quit":
-                                if (_canDoCommand(_nickRegex.Match(ex[0]).Value) || console)
-                                {
-                                    SendData("QUIT");
-                                    _shouldRun = false;
-                                }
-                                else
-                                {
-                                    SendData("PRIVMSG", ex[2] + " :" + _nickRegex.Match(ex[0]) + ": You don't have permission to do this.");
-                                }
-                                break;
-                        }
-                    }
+                    ex[2] = Util.NickRegex.Match(ex[0]).Value;
                 }
+
+                NewLine(ex, normalizedCommand, false, console);
             }
         }
 
-        private async void _writeMcStatus(string who)
+        private void _handleLine(List<string> ex, string command, bool userAuthenticated, bool console)
         {
-            Dictionary<string, string> mcStatus = await McStatus.GetMcStatus();
-
-            foreach (string key in mcStatus.Keys.ToList())
+            if (ex.Count > 3)
             {
-                SendData("PRIVMSG", who + " :" + McStatus.SericeNames[key] + ": " + McStatus.StatusMessages[mcStatus[key]]);
+                //Commands with arguments
+                if (ex.Count > 4)
+                {
+                    switch (command)
+                    {
+                        case "join":
+                            if (userAuthenticated || console)
+                            {
+                                SendData("JOIN", Util.JoinStringList(ex, ",", 4));
+                                foreach (string channel in ex.GetRange(4, ex.Count - 4))
+                                {
+                                    if (!Channels.ContainsKey(channel.ToLower()))
+                                    {
+                                        Channels.Add(channel.ToLower(), new Channel());
+                                    }
+                                }
+                            }
+                            else
+                            {
+                                SendData("PRIVMSG", ex[2] + " :" + Util.NickRegex.Match(ex[0]) + ": You don't have permission to do this.");
+                            }
+                            break;
+                        case "about":
+                            SendData("PRIVMSG", ex[2] + " :" + _config.About);
+                            break;
+                        case "help":
+                            string help = "Available commands are: ";
+                            help += Util.JoinStringList(_config.Commands.Where(cmd => cmd.ConsoleServer == (console ? ConsoleServer.Console : ConsoleServer.Server) || cmd.ConsoleServer == ConsoleServer.Both).Select(cmd => cmd.Name).ToList(), ", ");
+                            help += " . With prefixes: " + Util.JoinStringList(_config.Prefixes, ", ") + " .";
+                            SendData("PRIVMSG", ex[2] + " :" + help.Replace("\\", ""));
+                            break;
+                        case "letmegooglethatforyou":
+                            SendData("PRIVMSG", ex[2] + " :http://lmgtfy.com/?q=" + Util.JoinStringList(ex, "+", 4));
+                            break;
+                        case "nick":
+                            if (userAuthenticated || console)
+                            {
+                                SendData("NICK", Util.JoinStringList(ex, "_", 4));
+                                _config.Server.User.Nick = Util.JoinStringList(ex, "_", 4);
+                            }
+                            else
+                            {
+                                SendData("PRIVMSG", ex[2] + " :" + Util.NickRegex.Match(ex[0]) + ": You don't have permission to do this.");
+                            }
+                            break;
+                        case "part":
+                            if (userAuthenticated || console)
+                            {
+                                SendData("PART", Util.JoinStringList(ex, ",", 4));
+                            }
+                            else
+                            {
+                                SendData("PRIVMSG", ex[2] + " :" + Util.NickRegex.Match(ex[0]) + ": You don't have permission to do this.");
+                            }
+                            break;
+                        case "quit":
+                            if (userAuthenticated || console)
+                            {
+                                SendData("QUIT", ":" + Util.JoinStringList(ex, " ", 4));
+                            }
+                            else
+                            {
+                                SendData("PRIVMSG", ":" + Util.NickRegex.Match(ex[0]) + ": You don't have permission to do this.");
+                            }
+                            break;
+                    }
+                }
+                else //Commands without arguments
+                {
+                    switch (command)
+                    {
+                        case "about":
+                            SendData("PRIVMSG", ex[2] + " :" + _config.About);
+                            break;
+                        case "help":
+                            string help = "Available commands are: ";
+                            help += Util.JoinStringList(_config.Commands.Where(cmd => cmd.ConsoleServer == (console ? ConsoleServer.Console : ConsoleServer.Server) || cmd.ConsoleServer == ConsoleServer.Both).Select(cmd => cmd.Name).ToList(), ", ") + ", ";
+                            foreach (PluginInformation plugin in _plugins)
+                            {
+                                help += Util.JoinStringList(plugin.Config.Commands.Where(cmd => cmd.ConsoleServer == (console ? ConsoleServer.Console : ConsoleServer.Server) || cmd.ConsoleServer == ConsoleServer.Both).Select(cmd => cmd.Name).ToList(), ", ");
+                            }
+                            help += "; With prefixes: " + Util.JoinStringList(_config.Prefixes, ", ");
+                            SendData("PRIVMSG", ex[2] + " :" + help.Replace("\\", ""));
+                            break;
+                        case "plugins":
+                            string plugins = "Loaded plugins: ";
+                            plugins += Util.JoinStringList(_plugins.Select(plugin => plugin.Name).ToList(), ", ");
+                            SendData("PRIVMSG", ex[2] + " :" + plugins + ".");
+                            break;
+                        case "part":
+                            if (userAuthenticated || console)
+                            {
+                                SendData("PART", ex[2]);
+                            }
+                            else
+                            {
+                                SendData("PRIVMSG", ex[2] + " :" + Util.NickRegex.Match(ex[0]) + ": You don't have permission to do this.");
+                            }
+                            break;
+                        case "quit":
+                            if (userAuthenticated || console)
+                            {
+                                Quit();
+                            }
+                            else
+                            {
+                                SendData("PRIVMSG", ex[2] + " :" + Util.NickRegex.Match(ex[0]) + ": You don't have permission to do this.");
+                            }
+                            break;
+                    }
+                }
             }
         }
 
         private bool _canDoCommand(string name)
         {
             bool inList = false;
-            foreach (string user in _config.Users)
+            foreach (string user in _config.Authorization.AuthorizedUsers)
             {
                 if (user == name)
                 {
@@ -435,7 +495,7 @@ namespace IRC
         {
             SendData("PRIVMSG", "NickServ :ACC " + name);
             List<string> ex = _streamReader.ReadLine().Split(' ').ToList();
-            if (ex.Count == 6 && _nickRegex.Match(ex[0]).Value == "NickServ")
+            if (ex.Count == 6 && Util.NickRegex.Match(ex[0]).Value == "NickServ")
             {
                 try
                 {
@@ -452,18 +512,24 @@ namespace IRC
             }
         }
 
-        private string _joinStringArray(List<string> strings, string glue = "", int start = 0)
+        private void Quit(string message = "")
         {
-            string str = "";
+            Running = false;
+            SendData("QUIT", message);
 
-            for (int i = start; i < strings.Count; i++)
+            Console.WriteLine("Disabling plugins ...");
+            foreach (Kiwana.Core.Plugins.PluginInformation plugin in _plugins)
             {
-                if (i < strings.Count && i > start)
-                { str += glue; }
-
-                str += strings[i];
+                Console.Write("  - " + plugin.Name + " ... ");
+                plugin.Instance.Disable();
+                Console.WriteLine("OK");
             }
-            return str;
+
+            Console.WriteLine("Bot stopped.");
         }
+
+        public delegate void NewLineHandler(List<string> ex, string command, bool userAuthenticated, bool console);
+
+        public event NewLineHandler NewLine;
     }
 }

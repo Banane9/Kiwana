@@ -1,12 +1,13 @@
-﻿using System;
+﻿using Kiwana.Core.Api;
+using System;
 using System.Collections.Generic;
 using System.Net.Http;
 using System.Threading.Tasks;
 using System.Web.Script.Serialization;
 
-namespace Kiwana.Core.Commands
+namespace McStatus
 {
-    public static class McStatus
+    public class McStatus : Plugin
     {
         private static JavaScriptSerializer _jsonSerializer = new JavaScriptSerializer();
         private static Uri _mcStatusUrl = new Uri("http://status.mojang.com/check");
@@ -18,7 +19,7 @@ namespace Kiwana.Core.Commands
             {"red", "This service is down! We are doing our very best to resolve the issue as soon as possible."}
         };
 
-        public static Dictionary<string, string> SericeNames = new Dictionary<string, string>() {
+        public static Dictionary<string, string> ServiceNames = new Dictionary<string, string>() {
             {"minecraft.net", "Minecraft.net"},
             {"login.minecraft.net", "Legacy Minecraft Logins"},
             {"session.minecraft.net", "Legacy Minecraft Sessions"},
@@ -30,9 +31,7 @@ namespace Kiwana.Core.Commands
 
         public static async Task<Dictionary<string, string>> GetMcStatus()
         {
-            HttpResponseMessage response = await _httpClient.GetAsync(_mcStatusUrl);
-
-            List<Dictionary<string, string>> mcStatus = _jsonSerializer.Deserialize<List<Dictionary<string, string>>>(await response.Content.ReadAsStringAsync());
+            List<Dictionary<string, string>> mcStatus = _jsonSerializer.Deserialize<List<Dictionary<string, string>>>(await _httpClient.GetStringAsync(_mcStatusUrl));
             Dictionary<string, string> toReturn = new Dictionary<string, string>();
 
             foreach (Dictionary<string, string> status in mcStatus)
@@ -44,6 +43,26 @@ namespace Kiwana.Core.Commands
             }
 
             return toReturn;
+        }
+
+        private async void _writeMcStatus(string who)
+        {
+            Dictionary<string, string> mcStatus = await GetMcStatus();
+
+            foreach (string key in mcStatus.Keys)
+            {
+                if (ServiceNames.ContainsKey(key) && StatusMessages.ContainsKey(mcStatus[key]))
+                    SendData("PRIVMSG", who + " :" + ServiceNames[key] + ": " + StatusMessages[mcStatus[key]]);
+            }
+        }
+
+        public override void HandleLine(List<string> ex, string command, bool userAuthenticated, bool console)
+        {
+            if (command == "mcstatus")
+            {
+                SendData("PRIVMSG", ex[2] + " :Retrieving status of Minecraft services...");
+                _writeMcStatus(ex[2]);
+            }
         }
     }
 }

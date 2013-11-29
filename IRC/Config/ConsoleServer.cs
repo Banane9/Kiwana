@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace IRC.Config
+namespace Kiwana.Core.Config
 {
     public enum ConsoleServer
     {
