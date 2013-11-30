@@ -5,9 +5,9 @@ namespace AsciiArt
 {
     public class AsciiArt : Plugin
     {
-        public override void HandleLine(List<string> ex, string command, bool userAuthenticated, bool console)
+        public override void HandleLine(List<string> ex, string command, bool userAuthenticated, bool userAuthorized, bool console)
         {
-            if (userAuthenticated || console)
+            if (userAuthorized || console)
             {
                 switch (command)
                 {

@@ -9,7 +9,7 @@ namespace ProbSim
     {
         private Random _random = new Random();
 
-        public override void HandleLine(List<string> ex, string command, bool userAuthenticated, bool console)
+        public override void HandleLine(List<string> ex, string command, bool userAuthenticated, bool userAuthorized, bool console)
         {
             if (ex.Count > 4)
             {

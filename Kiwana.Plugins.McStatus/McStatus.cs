@@ -56,12 +56,15 @@ namespace McStatus
             }
         }
 
-        public override void HandleLine(List<string> ex, string command, bool userAuthenticated, bool console)
+        public override void HandleLine(List<string> ex, string command, bool userAuthenticated, bool userAuthorized, bool console)
         {
             if (command == "mcstatus")
             {
-                SendData("PRIVMSG", ex[2] + " :Retrieving status of Minecraft services...");
-                _writeMcStatus(ex[2]);
+                if (userAuthenticated)
+                {
+                    SendData("PRIVMSG", ex[2] + " :Retrieving status of Minecraft services...");
+                    _writeMcStatus(ex[2]);
+                }
             }
         }
     }

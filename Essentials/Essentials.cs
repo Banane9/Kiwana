@@ -8,7 +8,7 @@ namespace Essentials
 {
     public class Essentials : Plugin
     {
-        public override void HandleLine(List<string> ex, string command, bool userAuthenticated, bool console)
+        public override void HandleLine(List<string> ex, string command, bool userAuthenticated, bool userAuthorized, bool console)
         {
             if (ex.Count > 4)
             {
@@ -21,7 +21,7 @@ namespace Essentials
                         SendData("PRIVMSG", ex[2] + " :\x01" + "ACTION " + Util.JoinStringList(ex, " ", 4) + "\x01");
                         break;
                     case "tell":
-                        if (userAuthenticated || console)
+                        if (userAuthorized || console)
                         {
                             SendData("PRIVMSG", ex[4] + " :" + Util.JoinStringList(ex, " ", 5));
                         }
@@ -31,7 +31,7 @@ namespace Essentials
                         }
                         break;
                     case "raw":
-                        if (userAuthenticated || console)
+                        if (userAuthorized || console)
                         {
                             if (ex[4].ToLower() == "quit")
                             {

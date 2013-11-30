@@ -63,7 +63,10 @@
     <MessageLength>6</MessageLength>
     <AutherizedUsers>
       <User>Banane9</User>
-      <User>oddstr13</User>
+      <User>Oddstr13</User>
+      <User>x8uurg</User>
+      <User>svennp</User>
+      <User>SafPlusPlus</User>
     </AutherizedUsers>
   </Authorization>
   <About>I'm Banane9's C# Bot. Use the help command to find out what commands I support.</About>

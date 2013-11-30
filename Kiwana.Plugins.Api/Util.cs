@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Text.RegularExpressions;
 
 namespace Kiwana.Core.Api
@@ -38,7 +39,6 @@ namespace Kiwana.Core.Api
         /// </summary>
         public static Regex MessageRegex = new Regex(@"(?<=\:).+");
 
-
         /// <summary>
         /// Joins the strings in the list with the glue. Only uses the strings in the range specified.
         /// </summary>
@@ -62,6 +62,26 @@ namespace Kiwana.Core.Api
             }
 
             return str;
+        }
+
+        /// <summary>
+        /// Converts a Unix Timestamp (Seconds since January 1st 00:00:00) into a DateTime
+        /// </summary>
+        /// <param name="unixTime">The Unix Timestamp</param>
+        /// <returns>The DateTime representing the Unix Timestamp</returns>
+        public static DateTime UnixToDateTime(long unixTime)
+        {
+            return new DateTime(1970, 1, 1, 0, 0, 0).AddSeconds(unixTime);
+        }
+
+        /// <summary>
+        /// Converts a DateTime into a Unix Timestamp (Seconds since January 1st 00:00:00)
+        /// </summary>
+        /// <param name="dateTime">The DateTime</param>
+        /// <returns>The Unix Timestamp representing the DateTime</returns>
+        public static long DateTimeToUnix(DateTime dateTime)
+        {
+            return (long) (new DateTime(1970, 1, 1, 0, 0, 0) - dateTime).TotalSeconds;
         }
     }
 }
