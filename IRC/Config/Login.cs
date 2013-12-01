@@ -2,8 +2,8 @@
 
 namespace Kiwana.Core.Config
 {
-    [XmlRoot("User")]
-    public class User
+    [XmlRoot("Login")]
+    public class Login
     {
         public string Name { get; set; }
         public string Nick { get; set; }

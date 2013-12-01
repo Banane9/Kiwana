@@ -8,7 +8,7 @@
             <xs:sequence>
               <xs:element name="Url" type="xs:string" />
               <xs:element name="Port" type="xs:unsignedShort" />
-              <xs:element name="User">
+              <xs:element name="Login">
                 <xs:complexType>
                   <xs:sequence>
                     <xs:element name="Nick" type="xs:string" />
@@ -38,7 +38,7 @@
                   </xs:sequence>
                   <xs:attribute name="Name" type="xs:string" use="required" />
                   <xs:attribute name="Rank" type="xs:int" use="required" />
-                  <xs:attribute name="AuthenticationRequired" type="xs:boolean" use="required" />
+                  <xs:attribute name="AuthenticationRequired" type="xs:boolean" use="optional" default="true" />
                   <xs:attribute name="ConsoleServer" use="required">
                     <xs:simpleType>
                       <xs:restriction base="xs:string">
@@ -98,6 +98,7 @@
             </xs:sequence>
           </xs:complexType>
         </xs:element>
+        <xs:element name="MessageInterval" type="xs:unsignedInt" />
       </xs:sequence>
     </xs:complexType>
   </xs:element>

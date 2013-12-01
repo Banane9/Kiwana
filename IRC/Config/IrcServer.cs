@@ -11,6 +11,6 @@ namespace Kiwana.Core.Config
 
         public string Url { get; set; }
         public int Port { get; set; }
-        public User User { get; set; }
+        public Login Login { get; set; }
     }
 }

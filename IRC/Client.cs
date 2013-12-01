@@ -12,6 +12,8 @@ using Kiwana.Core.Plugins;
 using System.Xml.Serialization;
 using System.Xml;
 using Kiwana.Core.Api.Config;
+using System.Threading;
+using System.Xml.Schema;
 
 namespace Kiwana.Core
 {
@@ -29,7 +31,7 @@ namespace Kiwana.Core
         private List<PluginInformation> _plugins = new List<PluginInformation>();
 
         public Dictionary<string, Channel> Channels = new Dictionary<string, Channel>();
-        public Dictionary<string, ChannelUser> Users = new Dictionary<string, ChannelUser>();
+        public Dictionary<string, User> Users = new Dictionary<string, User>();
 
         private Regex _prefixRegex;
         private Regex _serverCommandRegex;
@@ -37,10 +39,18 @@ namespace Kiwana.Core
 
         private Random random = new Random();
 
+        public DateTime LastSend = new DateTime();
+
         public Client(string config)
         {
             XmlSerializer serializer = new XmlSerializer(typeof(BotConfig));
+
+            XmlSchema schema = new XmlSchema();
+            schema.SourceUri = "Config/BotConfig.xsd";
+
             XmlReader reader = XmlReader.Create(config);
+            reader.Settings.Schemas.Add(schema);
+
             _config = (BotConfig)serializer.Deserialize(reader);
         }
 
@@ -120,6 +130,12 @@ namespace Kiwana.Core
 
         public void SendData(string command, string argument = "")
         {
+            TimeSpan sinceLastSend = new DateTime() - LastSend;
+            if (sinceLastSend.TotalMilliseconds < _config.MessageInterval)
+            {
+                Thread.Sleep((int)_config.MessageInterval - (int)sinceLastSend.TotalMilliseconds);
+            }
+
             if (argument == "")
             {
                 _streamWriter.WriteLine(command);
@@ -132,6 +148,7 @@ namespace Kiwana.Core
             }
 
             Console.WriteLine(command + " " + argument);
+            LastSend = new DateTime();
         }
 
         public async Task Work()
@@ -149,9 +166,9 @@ namespace Kiwana.Core
                 _streamReader = new StreamReader(_networkStream);
                 _streamWriter = new StreamWriter(_networkStream);
 
-                SendData("PASS", _config.Server.User.Password);
-                SendData("NICK", _config.Server.User.Name);
-                SendData("USER", _config.Server.User.Nick + " Owner Banane9 :" + _config.Server.User.Name);
+                SendData("PASS", _config.Server.Login.Password);
+                SendData("NICK", _config.Server.Login.Name);
+                SendData("USER", _config.Server.Login.Nick + " Owner Banane9 :" + _config.Server.Login.Name);
 
                 Console.WriteLine("Success");
                 Running = true;
@@ -409,7 +426,7 @@ namespace Kiwana.Core
                 {
                     string normalizedCommand = GetNormalizedCommand(command, console);
 
-                    if (ex[2] == _config.Server.User.Nick)
+                    if (ex[2] == _config.Server.Login.Nick)
                     {
                         ex[2] = Util.NickRegex.Match(ex[0]).Value;
                     }
@@ -421,7 +438,21 @@ namespace Kiwana.Core
                         _requestAuthentication(nick);
                     }
 
-                    NewLine(ex, normalizedCommand, console ? true : Users[nick].Authenticated, string.IsNullOrEmpty(normalizedCommand) ? true : console ? true : Users[nick].Rank >= _config.Commands.Single(cmd => cmd.Name == normalizedCommand).Rank, console);
+                    bool authorized = false;
+
+                    if (!string.IsNullOrEmpty(normalizedCommand) && !console)
+                    {
+                        Command c = _config.Commands.Single(cmd => cmd.Name == normalizedCommand);
+
+                        authorized = Users[nick].Rank >= c.Rank;
+
+                        if (!authorized)
+                        {
+                            SendData("PRIVMSG", ex[2] + " :" + nick + ": You aren't allowed to do this. Minimum rank is [" + c.Rank + "] while yours is only [" + Users[nick].Rank + "]. If this was your first message, try again shortly.");
+                        }
+                    }
+
+                    NewLine(ex, normalizedCommand, console ? true : Users[nick].Authenticated, string.IsNullOrEmpty(normalizedCommand) ? true : console ? true : authorized, console);
                 }
             }
         }
@@ -430,7 +461,7 @@ namespace Kiwana.Core
         {
             if (!Users.ContainsKey(nick))
             {
-                Users.Add(nick, new ChannelUser());
+                Users.Add(nick, new User());
             }
 
             Users[nick].AuthenticationRequested = true;
@@ -474,7 +505,7 @@ namespace Kiwana.Core
                                 break;
                             case "nick":
                                 SendData("NICK", Util.JoinStringList(ex, "_", 4));
-                                _config.Server.User.Nick = Util.JoinStringList(ex, "_", 4);
+                                _config.Server.Login.Nick = Util.JoinStringList(ex, "_", 4);
                                 break;
                             case "part":
                                 SendData("PART", Util.JoinStringList(ex, ",", 4));

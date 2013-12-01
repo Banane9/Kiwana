@@ -28,5 +28,7 @@ namespace Kiwana.Core.Config
         [XmlArray("QuitMessages")]
         [XmlArrayItem("QuitMessage")]
         public List<string> QuitMessages { get; set; }
+
+        public uint MessageInterval { get; set; }
     }
 }

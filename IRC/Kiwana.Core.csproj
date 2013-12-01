@@ -50,10 +50,10 @@
     <Compile Include="Config\Permissions.cs" />
     <Compile Include="Config\Authenticator.cs" />
     <Compile Include="Config\IrcServer.cs" />
-    <Compile Include="Config\User.cs" />
+    <Compile Include="Config\Login.cs" />
     <Compile Include="Config\UserGroup.cs" />
     <Compile Include="Objects\Channel.cs" />
-    <Compile Include="Objects\ChannelUser.cs" />
+    <Compile Include="Objects\User.cs" />
     <Compile Include="Plugins\PluginInformation.cs" />
     <Compile Include="Plugins\PluginInitializationFailedException.cs" />
     <Compile Include="Plugins\PluginManager.cs" />
@@ -63,6 +63,7 @@
     <None Include="app.config" />
     <None Include="Config\BotConfig.xsd">
       <SubType>Designer</SubType>
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
   </ItemGroup>
   <ItemGroup>

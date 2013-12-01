@@ -5,7 +5,7 @@ using System.Text;
 
 namespace Kiwana.Core.Objects
 {
-    public class ChannelUser
+    public class User
     {
         public int Rank { get; set; }
 
@@ -13,7 +13,7 @@ namespace Kiwana.Core.Objects
 
         public bool AuthenticationRequested { get; set; }
 
-        public ChannelUser(int rank = 0, bool authenticated = false, bool authenticationRequested = false)
+        public User(int rank = 0, bool authenticated = false, bool authenticationRequested = false)
         {
             Rank = rank;
             Authenticated = authenticated;

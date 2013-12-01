@@ -3,44 +3,41 @@
   <Server Name="IrcServer">
     <Url>irc.server.net</Url>
     <Port>6667</Port>
-    <User>
+    <Login>
       <Nick>Kiwana</Nick>
       <Name>Kiwana</Name>
       <Password>Password</Password>
-    </User>
+    </Login>
   </Server>
   <PluginFolders>
     <PluginFolder>Plugins</PluginFolder>
   </PluginFolders>
   <Commands>
-    <Command Name="quit" ConsoleServer="Both">
+    <Command Name="quit" Rank="1000" ConsoleServer="Both">
       <Alias>die</Alias>
       <Alias>q</Alias>
       <Alias>d</Alias>
     </Command>
-    <Command Name="part" ConsoleServer="Both">
+    <Command Name="nick" Rank="1000" ConsoleServer="Both">
+      <Alias>n</Alias>
+    </Command>
+    <Command Name="part" Rank="100" ConsoleServer="Both">
       <Alias>leave</Alias>
       <Alias>l</Alias>
       <Alias>p</Alias>
     </Command>
-    <Command Name="join" ConsoleServer="Both">
+    <Command Name="join" Rank="100" ConsoleServer="Both">
       <Alias>enter</Alias>
       <Alias>e</Alias>
       <Alias>j</Alias>
     </Command>
-    <Command Name="nick" ConsoleServer="Both">
-      <Alias>n</Alias>
-    </Command>
-    <Command Name="letmegooglethatforyou" ConsoleServer="Server">
-      <Alias>lmgtfy</Alias>
-    </Command>
-    <Command Name="help" ConsoleServer="Both">
+    <Command Name="help" Rank="0" AuthenticationRequired="false" ConsoleServer="Both">
       <Alias>h</Alias>
     </Command>
-    <Command Name="about" ConsoleServer="Both">
+    <Command Name="about" Rank="0" AuthenticationRequired="false" ConsoleServer="Both">
       <Alias>a</Alias>
     </Command>
-    <Command Name="plugins" ConsoleServer="Both">
+    <Command Name="plugins" Rank="0" AuthenticationRequired="false" ConsoleServer="Both">
     </Command>
   </Commands>
   <Prefixes>
@@ -52,20 +49,34 @@
     <Prefix>&amp;</Prefix>
     <Prefix>\?</Prefix>
   </Prefixes>
-  <Authorization>
-    <Authorizer>
-      <Nick>NickServ</Nick>
-      <Name>NickServ</Name>
-      <Host>services.server.net</Host>
-    </Authorizer>
-    <AuthorizationCode>3</AuthorizationCode>
-    <MessagePosition>5</MessagePosition>
-    <MessageLength>6</MessageLength>
-    <AutherizedUsers>
-      <User>YourUserName</User>
-      <User>YourFriend'sUserName</User>
-    </AutherizedUsers>
-  </Authorization>
+  <Permissions>
+    <Authenticator>
+      <HostMask>NickServ!NickServ@services.esper.net</HostMask>
+      <AuthenticationCode>3</AuthenticationCode>
+      <MessagePosition>5</MessagePosition>
+    </Authenticator>
+    <UserGroups>
+      <UserGroup Name="Owner" Rank="1000">
+        <User>Yourself</User>
+      </UserGroup>
+      <UserGroup Name="Admin" Rank="100">
+        <User>Your</User>
+        <User>best</User>
+        <User>friends</User>
+      </UserGroup>
+      <UserGroup Name="Trusted" Rank="10">
+        <User>Other</User>
+        <User>OK</User>
+        <User>People</User>
+      </UserGroup>
+    </UserGroups>
+  </Permissions>
   <About>I'm a C# Bot. Use the help command to find out what commands I support.</About>
-  <DefaultQuit>Bai</DefaultQuit>
+  <QuitMessages>
+    <QuitMessage>I'll be back!</QuitMessage>
+    <QuitMessage>See ya later, Alligator!</QuitMessage>
+    <QuitMessage>I'm out!</QuitMessage>
+  </QuitMessages>
+  <!-- Minimum interval between messages; For flood control -->
+  <MessageInterval>333</MessageInterval>
 </BotConfig>

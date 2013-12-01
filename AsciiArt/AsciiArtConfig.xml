@@ -1,6 +1,58 @@
 ﻿<?xml version="1.0" encoding="utf-8" ?>
 <PluginConfig>
   <Commands>
-    <Command Name="doge" Rank="10" ConsoleServer="Server"/>
+    <Command Name="doge" Rank="100" ConsoleServer="Server">
+      <Alias>wow</Alias>
+    </Command>
+    <Command Name="lol" Rank="100" ConsoleServer="Server"/>
+    <Command Name="troll" Rank="100" ConsoleServer="Server">
+      <Alias>trol(ol)+</Alias>
+    </Command>
+    <Command Name="trollgirl" Rank="100" ConsoleServer="Server">
+      <Alias>trol(ol)+girl</Alias>
+    </Command>
+    <Command Name="bitchplease" Rank="100" ConsoleServer="Server">
+      <Alias>please</Alias>
+      <Alias>bitch</Alias>
+      <Alias>bp</Alias>
+    </Command>
+    <Command Name="megusta" Rank="100" ConsoleServer="Server">
+      <Alias>gusta</Alias>
+    </Command>
+    <Command Name="notbad" Rank="100" ConsoleServer="Server"/>
+    <Command Name="youdon'tsay" Rank="100" ConsoleServer="Server">
+      <Alias>youdontsay</Alias>
+      <Alias>yds</Alias>
+    </Command>
+    <Command Name="areyoufuckingkiddingme" Rank="100" ConsoleServer="Server">
+      <Alias>kidding</Alias>
+      <Alias>areyouf\*ckingkiddingme</Alias>
+      <Alias>ayfkm</Alias>
+    </Command>
+    <Command Name="newspaperguy" Rank="100" ConsoleServer="Server">
+      <Alias>newspaper</Alias>
+    </Command>
+    <Command Name="ohgodwhy" Rank="100" ConsoleServer="Server">
+      <Alias>ohmygodwhy</Alias>
+      <Alias>ogw</Alias>
+      <Alias>omgw</Alias>
+    </Command>
+    <Command Name="iknowthatfeelbro" Rank="100" ConsoleServer="Server">
+      <Alias>iknowthatfeel</Alias>
+      <Alias>iktfb</Alias>
+      <Alias>iktf</Alias>
+    </Command>
+    <Command Name="nothingtodohere" Rank="100" ConsoleServer="Server">
+      <Alias>jetpackguy</Alias>
+      <Alias>jetpack</Alias>
+      <Alias>ntdh</Alias>
+      <Alias>jpg</Alias>
+      <Alias>jp</Alias>
+    </Command>
+    <Command Name="nyancat" Rank="100" ConsoleServer="Server">
+      <Alias>((nyan)+)</Alias>
+      <Alias>(nyan)*cat</Alias>
+    </Command>
+    <Command Name="objection" Rank="100" ConsoleServer="Server"/>
   </Commands>
 </PluginConfig>
