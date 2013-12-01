@@ -37,6 +37,8 @@
                     <xs:element maxOccurs="unbounded" name="Alias" type="xs:string" />
                   </xs:sequence>
                   <xs:attribute name="Name" type="xs:string" use="required" />
+                  <xs:attribute name="Rank" type="xs:int" use="required" />
+                  <xs:attribute name="AuthenticationRequired" type="xs:boolean" use="required" />
                   <xs:attribute name="ConsoleServer" use="required">
                     <xs:simpleType>
                       <xs:restriction base="xs:string">
@@ -58,25 +60,30 @@
             </xs:sequence>
           </xs:complexType>
         </xs:element>
-        <xs:element name="Authorization">
+        <xs:element name="Permissions">
           <xs:complexType>
             <xs:sequence>
-              <xs:element name="Authorizer">
+              <xs:element name="Authenticator">
                 <xs:complexType>
                   <xs:sequence>
-                    <xs:element name="Nick" type="xs:string" />
-                    <xs:element name="Name" type="xs:string" />
-                    <xs:element name="Host" type="xs:string" />
+                    <xs:element name="HostMask" type="xs:string" />
+                    <xs:element name="AuthenticationCode" type="xs:string" />
+                    <xs:element name="MessagePosition" type="xs:unsignedInt" />
                   </xs:sequence>
                 </xs:complexType>
               </xs:element>
-              <xs:element name="AuthorizationCode" type="xs:unsignedByte" />
-              <xs:element name="MessagePosition" type="xs:unsignedByte" />
-              <xs:element name="MessageLength" type="xs:unsignedByte" />
-              <xs:element name="AutherizedUsers">
+              <xs:element name="UserGroups">
                 <xs:complexType>
                   <xs:sequence>
-                    <xs:element maxOccurs="unbounded" name="User" type="xs:string" />
+                    <xs:element maxOccurs="unbounded" name="UserGroup">
+                      <xs:complexType mixed="true">
+                        <xs:sequence>
+                          <xs:element minOccurs="0" maxOccurs="unbounded" name="User" type="xs:string" />
+                        </xs:sequence>
+                        <xs:attribute name="Rank" type="xs:int" use="required" />
+                        <xs:attribute name="Name" type="xs:string" use="required" />
+                      </xs:complexType>
+                    </xs:element>
                   </xs:sequence>
                 </xs:complexType>
               </xs:element>
@@ -84,6 +91,13 @@
           </xs:complexType>
         </xs:element>
         <xs:element name="About" type="xs:string" />
+        <xs:element name="QuitMessages">
+          <xs:complexType>
+            <xs:sequence>
+              <xs:element maxOccurs="unbounded" name="QuitMessage" type="xs:string" />
+            </xs:sequence>
+          </xs:complexType>
+        </xs:element>
       </xs:sequence>
     </xs:complexType>
   </xs:element>

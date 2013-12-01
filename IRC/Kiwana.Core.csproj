@@ -44,16 +44,16 @@
   <ItemGroup>
     <Compile Include="Client.cs" />
     <Compile Include="Commands\McStatus.cs" />
-    <Compile Include="Config\Authorization.cs" />
-    <Compile Include="Config\Authorizer.cs" />
-    <Compile Include="Config\BotConfig.cs" />
-    <Compile Include="Config\Command.cs" />
-    <Compile Include="Config\ConsoleServer.cs" />
+    <Compile Include="Config\BotConfig.cs">
+      <DependentUpon>BotConfig.xsd</DependentUpon>
+    </Compile>
+    <Compile Include="Config\Permissions.cs" />
+    <Compile Include="Config\Authenticator.cs" />
     <Compile Include="Config\IrcServer.cs" />
     <Compile Include="Config\User.cs" />
+    <Compile Include="Config\UserGroup.cs" />
     <Compile Include="Objects\Channel.cs" />
     <Compile Include="Objects\ChannelUser.cs" />
-    <Compile Include="Config\PluginConfig.cs" />
     <Compile Include="Plugins\PluginInformation.cs" />
     <Compile Include="Plugins\PluginInitializationFailedException.cs" />
     <Compile Include="Plugins\PluginManager.cs" />
@@ -62,9 +62,6 @@
   <ItemGroup>
     <None Include="app.config" />
     <None Include="Config\BotConfig.xsd">
-      <SubType>Designer</SubType>
-    </None>
-    <None Include="Config\PluginConfig.xsd">
       <SubType>Designer</SubType>
     </None>
   </ItemGroup>

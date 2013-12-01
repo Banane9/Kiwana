@@ -11,6 +11,7 @@ using System.Threading.Tasks;
 using Kiwana.Core.Plugins;
 using System.Xml.Serialization;
 using System.Xml;
+using Kiwana.Core.Api.Config;
 
 namespace Kiwana.Core
 {
@@ -269,19 +270,29 @@ namespace Kiwana.Core
                     }
                     else if (ex[1] == "NOTICE" && ex[4] == "ACC")
                     {
-                        if (Util.NickRegex.Match(ex[0]).Value == _config.Authorization.Authorizer.Nick && Util.NameRegex.Match(ex[0]).Value == _config.Authorization.Authorizer.Name && Util.HostRegex.Match(ex[0]).Value == _config.Authorization.Authorizer.Host)
+                        if (Util.HostMaskRegex.Match(ex[0]).Value.ToLower() == _config.Permissions.Authenticator.HostMask.ToLower())
                         {
                             string nick = Util.MessageRegex.Match(ex[3]).Value;
                             //Status = ex[5]
 
                             if (Users[nick].AuthenticationRequested)
                             {
-                                if (ex[5] == _config.Authorization.AuthorizationCode)
+                                Users[nick].AuthenticationRequested = false;
+
+                                if (ex[_config.Permissions.Authenticator.MessagePosition] == _config.Permissions.Authenticator.AuthenticationCode)
                                 {
                                     Users[nick].Authenticated = true;
-                                    Users[nick].Authorized = _config.Authorization.AuthorizedUsers.Contains(nick);
 
-                                    Console.WriteLine("User " + nick + " is " + (Users[nick].Authorized ? "authorized" : "authenticated but not authorized") + ".");
+                                    foreach (UserGroup group in _config.Permissions.UserGroups)
+                                    {
+                                        if (group.Users.Contains(nick))
+                                        {
+                                            Users[nick].Rank = group.Rank;
+                                            break;
+                                        }
+                                    }
+
+                                    Console.WriteLine("User " + nick + " is authenticated and has rank [" + Users[nick].Rank + "].");
                                 }
                                 else
                                 {
@@ -342,9 +353,17 @@ namespace Kiwana.Core
                 {
                     if (ex[1] == "PART")
                     {
-                        Channels[ex[2].ToLower()].Users.Remove(Util.NickRegex.Match(ex[0]).Value);
+                        string channel = ex[2].ToLower();
+                        if (Channels.ContainsKey(channel))
+                        {
+                            string nick = Util.NickRegex.Match(ex[0]).Value;
+                            if (Channels[channel].Users.Contains(nick))
+                            {
+                                Channels[channel].Users.Remove(nick);
 
-                        Console.WriteLine(ex[2] + " " + Util.NickRegex.Match(ex[0]).Value + " left the channel.");
+                                Console.WriteLine(ex[2] + " " + Util.NickRegex.Match(ex[0]).Value + " left the channel.");
+                            }
+                        }
                     }
                     else if (ex[1] == "QUIT")
                     {
@@ -399,29 +418,39 @@ namespace Kiwana.Core
 
                     if (!Users.ContainsKey(nick) && !console)
                     {
-                        Users.Add(nick, new ChannelUser(authenticationRequested: true));
-
-                        //Request Authentication
-                        SendData("PRIVMSG", "NickServ :ACC " + nick);
+                        _requestAuthentication(nick);
                     }
 
-                    NewLine(ex, normalizedCommand, console ? true : Users[nick].Authenticated, console ? true : Users[nick].Authorized, console);
+                    NewLine(ex, normalizedCommand, console ? true : Users[nick].Authenticated, string.IsNullOrEmpty(normalizedCommand) ? true : console ? true : Users[nick].Rank >= _config.Commands.Single(cmd => cmd.Name == normalizedCommand).Rank, console);
                 }
             }
         }
 
+        private void _requestAuthentication(string nick)
+        {
+            if (!Users.ContainsKey(nick))
+            {
+                Users.Add(nick, new ChannelUser());
+            }
+
+            Users[nick].AuthenticationRequested = true;
+
+            //Request Authentication
+            SendData("PRIVMSG", Util.NickRegex.Match(_config.Permissions.Authenticator.HostMask).Value + " :ACC " + nick);
+        }
+
         private void _handleLine(List<string> ex, string command, bool userAuthenticated, bool userAuthorized, bool console)
         {
-            if (ex.Count > 3)
+            if (userAuthorized)
             {
-                //Commands with arguments
-                if (ex.Count > 4)
+                if (ex.Count > 3)
                 {
-                    switch (command)
+                    //Commands with arguments
+                    if (ex.Count > 4)
                     {
-                        case "join":
-                            if (userAuthenticated || console)
-                            {
+                        switch (command)
+                        {
+                            case "join":
                                 SendData("JOIN", Util.JoinStringList(ex, ",", 4));
                                 foreach (string channel in ex.GetRange(4, ex.Count - 4))
                                 {
@@ -430,109 +459,73 @@ namespace Kiwana.Core
                                         Channels.Add(channel.ToLower(), new Channel());
                                     }
                                 }
-                            }
-                            else
-                            {
-                                SendData("PRIVMSG", ex[2] + " :" + Util.NickRegex.Match(ex[0]) + ": You don't have permission to do this.");
-                            }
-                            break;
-                        case "about":
-                            SendData("PRIVMSG", ex[2] + " :" + _config.About);
-                            break;
-                        case "help":
-                            string help = "Available commands are: ";
-                            help += Util.JoinStringList(_config.Commands.Where(cmd => cmd.ConsoleServer == (console ? ConsoleServer.Console : ConsoleServer.Server) || cmd.ConsoleServer == ConsoleServer.Both).Select(cmd => cmd.Name).ToList(), ", ");
-                            help += " . With prefixes: " + Util.JoinStringList(_config.Prefixes, ", ") + " .";
-                            SendData("PRIVMSG", ex[2] + " :" + help.Replace("\\", ""));
-                            break;
-                        case "letmegooglethatforyou":
-                            SendData("PRIVMSG", ex[2] + " :http://lmgtfy.com/?q=" + Util.JoinStringList(ex, "+", 4));
-                            break;
-                        case "nick":
-                            if (userAuthenticated || console)
-                            {
+                                break;
+                            case "about":
+                                SendData("PRIVMSG", ex[2] + " :" + _config.About);
+                                break;
+                            case "help":
+                                string help = "Available commands are: ";
+                                help += Util.JoinStringList(_config.Commands.Where(cmd => cmd.ConsoleServer == (console ? ConsoleServer.Console : ConsoleServer.Server) || cmd.ConsoleServer == ConsoleServer.Both).Select(cmd => cmd.Name).ToList(), ", ");
+                                help += " . With prefixes: " + Util.JoinStringList(_config.Prefixes, ", ") + " .";
+                                SendData("PRIVMSG", ex[2] + " :" + help.Replace("\\", ""));
+                                break;
+                            case "letmegooglethatforyou":
+                                SendData("PRIVMSG", ex[2] + " :http://lmgtfy.com/?q=" + Util.JoinStringList(ex, "+", 4));
+                                break;
+                            case "nick":
                                 SendData("NICK", Util.JoinStringList(ex, "_", 4));
                                 _config.Server.User.Nick = Util.JoinStringList(ex, "_", 4);
-                            }
-                            else
-                            {
-                                SendData("PRIVMSG", ex[2] + " :" + Util.NickRegex.Match(ex[0]) + ": You don't have permission to do this.");
-                            }
-                            break;
-                        case "part":
-                            if (userAuthenticated || console)
-                            {
+                                break;
+                            case "part":
                                 SendData("PART", Util.JoinStringList(ex, ",", 4));
 
-                                if (Channels.ContainsKey(ex[2]))
+                                foreach (string channel in ex.GetRange(4, ex.Count - 4))
                                 {
-                                    Channels.Remove(ex[2]);
+                                    if (Channels.ContainsKey(channel))
+                                    {
+                                        Channels.Remove(channel);
+                                    }
                                 }
-                            }
-                            else
-                            {
-                                SendData("PRIVMSG", ex[2] + " :" + Util.NickRegex.Match(ex[0]) + ": You don't have permission to do this.");
-                            }
-                            break;
-                        case "quit":
-                            if (userAuthenticated || console)
-                            {
+                                break;
+                            case "quit":
                                 Quit(Util.JoinStringList(ex, " ", 4));
-                            }
-                            else
-                            {
-                                SendData("PRIVMSG", ":" + Util.NickRegex.Match(ex[0]) + ": You don't have permission to do this.");
-                            }
-                            break;
+                                break;
+                        }
                     }
-                }
-                else //Commands without arguments
-                {
-                    switch (command)
+                    else //Commands without arguments
                     {
-                        case "about":
-                            SendData("PRIVMSG", ex[2] + " :" + _config.About);
-                            break;
-                        case "help":
-                            string help = "Available commands are: ";
-                            help += Util.JoinStringList(_config.Commands.Where(cmd => cmd.ConsoleServer == (console ? ConsoleServer.Console : ConsoleServer.Server) || cmd.ConsoleServer == ConsoleServer.Both).Select(cmd => cmd.Name).ToList(), ", ") + ", ";
-                            foreach (PluginInformation plugin in _plugins)
-                            {
-                                help += Util.JoinStringList(plugin.Config.Commands.Where(cmd => cmd.ConsoleServer == (console ? ConsoleServer.Console : ConsoleServer.Server) || cmd.ConsoleServer == ConsoleServer.Both).Select(cmd => cmd.Name).ToList(), ", ");
-                            }
-                            help += "; With prefixes: " + Util.JoinStringList(_config.Prefixes, ", ");
-                            SendData("PRIVMSG", ex[2] + " :" + help.Replace("\\", ""));
-                            break;
-                        case "plugins":
-                            string plugins = "Loaded plugins: ";
-                            plugins += Util.JoinStringList(_plugins.Select(plugin => plugin.Name).ToList(), ", ");
-                            SendData("PRIVMSG", ex[2] + " :" + plugins + ".");
-                            break;
-                        case "part":
-                            if (userAuthenticated || console)
-                            {
+                        switch (command)
+                        {
+                            case "about":
+                                SendData("PRIVMSG", ex[2] + " :" + _config.About);
+                                break;
+                            case "help":
+                                string help = "Available commands are: ";
+                                help += Util.JoinStringList(_config.Commands.Where(cmd => cmd.ConsoleServer == (console ? ConsoleServer.Console : ConsoleServer.Server) || cmd.ConsoleServer == ConsoleServer.Both).Select(cmd => cmd.Name).ToList(), ", ") + ", ";
+                                foreach (PluginInformation plugin in _plugins)
+                                {
+                                    help += Util.JoinStringList(plugin.Config.Commands.Where(cmd => cmd.ConsoleServer == (console ? ConsoleServer.Console : ConsoleServer.Server) || cmd.ConsoleServer == ConsoleServer.Both).Select(cmd => cmd.Name).ToList(), ", ");
+                                }
+                                help += "; With prefixes: " + Util.JoinStringList(_config.Prefixes, ", ");
+                                SendData("PRIVMSG", ex[2] + " :" + help.Replace("\\", ""));
+                                break;
+                            case "plugins":
+                                string plugins = "Loaded plugins: ";
+                                plugins += Util.JoinStringList(_plugins.Select(plugin => plugin.Name).ToList(), ", ");
+                                SendData("PRIVMSG", ex[2] + " :" + plugins + ".");
+                                break;
+                            case "part":
                                 SendData("PART", ex[2]);
 
                                 if (Channels.ContainsKey(ex[2]))
                                 {
                                     Channels.Remove(ex[2]);
                                 }
-                            }
-                            else
-                            {
-                                SendData("PRIVMSG", ex[2] + " :" + Util.NickRegex.Match(ex[0]) + ": You don't have permission to do this.");
-                            }
-                            break;
-                        case "quit":
-                            if (userAuthenticated || console)
-                            {
+                                break;
+                            case "quit":
                                 Quit();
-                            }
-                            else
-                            {
-                                SendData("PRIVMSG", ex[2] + " :" + Util.NickRegex.Match(ex[0]) + ": You don't have permission to do this.");
-                            }
-                            break;
+                                break;
+                        }
                     }
                 }
             }
@@ -544,7 +537,7 @@ namespace Kiwana.Core
 
             if (string.IsNullOrEmpty(message))
             {
-                SendData("QUIT");
+                SendData("QUIT", ":" + _config.QuitMessages[new Random().Next(0, _config.QuitMessages.Count - 1)]);
             }
             else
             {

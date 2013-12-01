@@ -1,4 +1,5 @@
 ﻿using Kiwana.Core.Api;
+using Kiwana.Core.Api.Config;
 using Kiwana.Core.Config;
 
 namespace Kiwana.Core.Plugins

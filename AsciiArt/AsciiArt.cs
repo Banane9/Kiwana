@@ -7,7 +7,7 @@ namespace AsciiArt
     {
         public override void HandleLine(List<string> ex, string command, bool userAuthenticated, bool userAuthorized, bool console)
         {
-            if (userAuthorized || console)
+            if (userAuthorized)
             {
                 switch (command)
                 {

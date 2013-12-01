@@ -51,12 +51,17 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Config\Command.cs" />
+    <Compile Include="Config\ConsoleServer.cs" />
     <Compile Include="Plugin.cs" />
+    <Compile Include="Config\PluginConfig.cs">
+      <DependentUpon>PluginConfig.xsd</DependentUpon>
+    </Compile>
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Util.cs" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="PluginConfig.xsd">
+    <None Include="Config\PluginConfig.xsd">
       <SubType>Designer</SubType>
     </None>
   </ItemGroup>

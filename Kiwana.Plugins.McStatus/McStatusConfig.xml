@@ -1,6 +1,7 @@
 ﻿<?xml version="1.0" encoding="utf-8" ?>
 <PluginConfig>
   <Commands>
-    <Command Name="mcstatus" ConsoleServer="Both"/>
+    <Command Name="verbosemcstatus" Rank="100" ConsoleServer="Both" />
+    <Command Name="mcstatus" Rank="0" ConsoleServer="Both"/>
   </Commands>
 </PluginConfig>

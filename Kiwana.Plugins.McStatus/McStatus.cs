@@ -45,25 +45,61 @@ namespace McStatus
             return toReturn;
         }
 
-        private async void _writeMcStatus(string who)
+        private async void _writeMcStatusVerbose(string recipient)
         {
             Dictionary<string, string> mcStatus = await GetMcStatus();
 
             foreach (string key in mcStatus.Keys)
             {
                 if (ServiceNames.ContainsKey(key) && StatusMessages.ContainsKey(mcStatus[key]))
-                    SendData("PRIVMSG", who + " :" + ServiceNames[key] + ": " + StatusMessages[mcStatus[key]]);
+                    SendData("PRIVMSG", recipient + " :" + ServiceNames[key] + ": " + StatusMessages[mcStatus[key]]);
+            }
+        }
+
+        private async void _writeMcStatus(string recipient)
+        {
+            Dictionary<string, string> mcStatus = await GetMcStatus();
+
+            List<string> notOk = new List<string>();
+            foreach (string key in mcStatus.Keys)
+            {
+                if (ServiceNames.ContainsKey(key) && StatusMessages.ContainsKey(mcStatus[key]))
+                {
+                    if (mcStatus[key] != "green")
+                    {
+                        notOk.Add(key);
+                    }
+                }
+            }
+
+            if (notOk.Count == 0)
+            {
+                SendData("PRIVMSG", recipient + " :All services healthy. All is good!");
+            }
+            else
+            {
+                SendData("PRIVMSG", recipient + " :These services aren't ok:");
+                foreach (string key in notOk)
+                {
+                    SendData("PRIVMSG", recipient + " :" + ServiceNames[key] + ": " + StatusMessages[mcStatus[key]]);
+                }
             }
         }
 
         public override void HandleLine(List<string> ex, string command, bool userAuthenticated, bool userAuthorized, bool console)
         {
-            if (command == "mcstatus")
+            if (userAuthorized)
             {
-                if (userAuthenticated)
+                switch (command)
                 {
-                    SendData("PRIVMSG", ex[2] + " :Retrieving status of Minecraft services...");
-                    _writeMcStatus(ex[2]);
+                    case "verbosemcstatus":
+                        SendData("PRIVMSG", ex[2] + " :Retrieving status of Minecraft services... Minor WOT incoming...");
+                        _writeMcStatusVerbose(ex[2]);
+                        break;
+                    case "mcstatus":
+                        SendData("PRIVMSG", ex[2] + " :Retrieving status of Minecraft services...");
+                        _writeMcStatus(ex[2]);
+                        break;
                 }
             }
         }

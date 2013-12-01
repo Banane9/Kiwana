@@ -10,52 +10,45 @@ namespace Essentials
     {
         public override void HandleLine(List<string> ex, string command, bool userAuthenticated, bool userAuthorized, bool console)
         {
-            if (ex.Count > 4)
+            if (userAuthorized)
             {
-                switch (command)
+                if (ex.Count > 4)
                 {
-                    case "say":
-                        SendData("PRIVMSG", ex[2] + " :" + Util.JoinStringList(ex, " ", 4)); //channel + *space*: + message
-                        break;
-                    case "me":
-                        SendData("PRIVMSG", ex[2] + " :\x01" + "ACTION " + Util.JoinStringList(ex, " ", 4) + "\x01");
-                        break;
-                    case "tell":
-                        if (userAuthorized || console)
-                        {
+                    switch (command)
+                    {
+                        case "say":
+                            SendData("PRIVMSG", ex[2] + " :" + Util.JoinStringList(ex, " ", 4)); //channel + *space*: + message
+                            break;
+                        case "me":
+                            SendData("PRIVMSG", ex[2] + " :\x01" + "ACTION " + Util.JoinStringList(ex, " ", 4) + "\x01");
+                            break;
+                        case "tell":
                             SendData("PRIVMSG", ex[4] + " :" + Util.JoinStringList(ex, " ", 5));
-                        }
-                        else
-                        {
-                            SendData("PRIVMSG", ex[2] + " :" + Util.NickRegex.Match(ex[0]) + ": You don't have permission to do this.");
-                        }
-                        break;
-                    case "raw":
-                        if (userAuthorized || console)
-                        {
+                            break;
+                        case "raw":
                             if (ex[4].ToLower() == "quit")
                             {
                                 SendData("PRIVMSG", ex[2] + " :Use the quit command for this.");
+                            }
+                            else if (ex[4].ToLower() == "part")
+                            {
+                                SendData("PRIVMSG", ex[2] + " :Use the part command for this.");
                             }
                             else
                             {
                                 SendData(Util.JoinStringList(ex, " ", 4));
                             }
-                        }
-                        else
-                        {
-                            SendData("PRIVMSG", ex[2] + " :" + Util.NickRegex.Match(ex[0]) + ": You don't have permission to do this.");
-                        }
-                        break;
+                            break;
+                    }
                 }
-            }
-            else
-            {
-                switch (command)
+                else
                 {
-                    case "ping":
-                        SendData("PRIVMSG", ex[2] + " :pong!");
-                        break;
+                    switch (command)
+                    {
+                        case "ping":
+                            SendData("PRIVMSG", ex[2] + " :pong!");
+                            break;
+                    }
                 }
             }
         }

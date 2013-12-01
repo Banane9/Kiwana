@@ -11,85 +11,88 @@ namespace ProbSim
 
         public override void HandleLine(List<string> ex, string command, bool userAuthenticated, bool userAuthorized, bool console)
         {
-            if (ex.Count > 4)
+            if (userAuthorized)
             {
-                switch (command)
+                if (ex.Count > 4)
                 {
-                    case "random":
-                        try
-                        {
-                            SendData("PRIVMSG", ex[2] + " :" + Util.NickRegex.Match(ex[0]) + ": " + _random.Next(int.Parse(Regex.Match(ex[4], @"\d+").Value), int.Parse(Regex.Match(ex[5], @"\d+").Value)));
-                        }
-                        catch
-                        {
-                            SendData("PRIVMSG", ex[2] + " :" + Util.NickRegex.Match(ex[0]) + ": Couldn't parse numbers.");
-                        }
-                        break;
-                    case "dice":
-                        try
-                        {
-                            int value = 0;
-                            string nextMode = "+";
-                            string formula = Util.JoinStringList(ex, start: 4);
-
-                            if (Regex.IsMatch(formula, @"\d+((-|\+)\d+)?d\d+(-|\+)?"))
+                    switch (command)
+                    {
+                        case "random":
+                            try
                             {
-                                MatchCollection diceFormulas = Regex.Matches(formula, @"\d+((-|\+)\d+)?d\d+(-|\+)?");
-                                foreach (Match diceFormula in diceFormulas)
+                                SendData("PRIVMSG", ex[2] + " :" + Util.NickRegex.Match(ex[0]) + ": " + _random.Next(int.Parse(Regex.Match(ex[4], @"\d+").Value), int.Parse(Regex.Match(ex[5], @"\d+").Value)));
+                            }
+                            catch
+                            {
+                                SendData("PRIVMSG", ex[2] + " :" + Util.NickRegex.Match(ex[0]) + ": Couldn't parse numbers.");
+                            }
+                            break;
+                        case "dice":
+                            try
+                            {
+                                int value = 0;
+                                string nextMode = "+";
+                                string formula = Util.JoinStringList(ex, start: 4);
+
+                                if (Regex.IsMatch(formula, @"\d+((-|\+)\d+)?d\d+(-|\+)?"))
                                 {
-                                    int diceValue = 0;
-
-                                    int dice = int.Parse(Regex.Match(diceFormula.Value, @"^\d+").Value);
-
-                                    int add = 0;
-                                    if (Regex.IsMatch(diceFormula.Value, @"(-|\+)\d+(?=d)"))
+                                    MatchCollection diceFormulas = Regex.Matches(formula, @"\d+((-|\+)\d+)?d\d+(-|\+)?");
+                                    foreach (Match diceFormula in diceFormulas)
                                     {
-                                        add = int.Parse(Regex.Match(diceFormula.Value, @"(-|\+)\d+(?=d)").Value);
+                                        int diceValue = 0;
+
+                                        int dice = int.Parse(Regex.Match(diceFormula.Value, @"^\d+").Value);
+
+                                        int add = 0;
+                                        if (Regex.IsMatch(diceFormula.Value, @"(-|\+)\d+(?=d)"))
+                                        {
+                                            add = int.Parse(Regex.Match(diceFormula.Value, @"(-|\+)\d+(?=d)").Value);
+                                        }
+
+                                        int sides = int.Parse(Regex.Match(diceFormula.Value, @"(?<=d)\d+").Value);
+
+                                        for (int i = 0; i < dice; i++)
+                                        {
+                                            diceValue += _random.Next(1, sides);
+                                        }
+
+                                        diceValue += add;
+
+                                        switch (nextMode)
+                                        {
+                                            case "+":
+                                                value += diceValue;
+                                                break;
+                                            case "-":
+                                                value -= diceValue;
+                                                break;
+                                        }
+
+                                        nextMode = Regex.Match(diceFormula.Value, @"(-|\+)$").Value;
                                     }
 
-                                    int sides = int.Parse(Regex.Match(diceFormula.Value, @"(?<=d)\d+").Value);
-
-                                    for (int i = 0; i < dice; i++)
-                                    {
-                                        diceValue += _random.Next(1, sides);
-                                    }
-
-                                    diceValue += add;
-
-                                    switch (nextMode)
-                                    {
-                                        case "+":
-                                            value += diceValue;
-                                            break;
-                                        case "-":
-                                            value -= diceValue;
-                                            break;
-                                    }
-
-                                    nextMode = Regex.Match(diceFormula.Value, @"(-|\+)$").Value;
+                                    SendData("PRIVMSG", ex[2] + " :" + Util.NickRegex.Match(ex[0]) + ": " + value);
                                 }
-
-                                SendData("PRIVMSG", ex[2] + " :" + Util.NickRegex.Match(ex[0]) + ": " + value);
+                                else
+                                {
+                                    SendData("PRIVMSG", ex[2] + " :" + Util.NickRegex.Match(ex[0]) + ": Invalid dice formula.");
+                                }
                             }
-                            else
+                            catch
                             {
-                                SendData("PRIVMSG", ex[2] + " :" + Util.NickRegex.Match(ex[0]) + ": Invalid dice formula.");
+                                SendData("PRIVMSG", ex[2] + " :" + Util.NickRegex.Match(ex[0]) + ": Couldn't parse dice formula.");
                             }
-                        }
-                        catch
-                        {
-                            SendData("PRIVMSG", ex[2] + " :" + Util.NickRegex.Match(ex[0]) + ": Couldn't parse dice formula.");
-                        }
-                        break;
+                            break;
+                    }
                 }
-            }
-            else if (ex.Count > 3)
-            {
-                switch (command)
+                else if (ex.Count > 3)
                 {
-                    case "tosscoin":
-                        SendData("PRIVMSG", ex[2] + " :" + Util.NickRegex.Match(ex[0]) + ": " + (_random.Next(1, 3) == 1 ? "Tails" : "Heads"));
-                        break;
+                    switch (command)
+                    {
+                        case "tosscoin":
+                            SendData("PRIVMSG", ex[2] + " :" + Util.NickRegex.Match(ex[0]) + ": " + (_random.Next(1, 3) == 1 ? "Tails" : "Heads"));
+                            break;
+                    }
                 }
             }
         }

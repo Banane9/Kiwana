@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Xml.Serialization;
 
-namespace Kiwana.Core.Config
+namespace Kiwana.Core.Api.Config
 {
     [XmlRoot("PluginConfig")]
     public class PluginConfig

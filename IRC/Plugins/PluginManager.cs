@@ -1,4 +1,5 @@
 ﻿using Kiwana.Core.Api;
+using Kiwana.Core.Api.Config;
 using Kiwana.Core.Config;
 using System;
 using System.Collections.Generic;
@@ -7,6 +8,7 @@ using System.Reflection;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Xml;
+using System.Xml.Schema;
 using System.Xml.Serialization;
 
 namespace Kiwana.Core.Plugins
@@ -18,6 +20,9 @@ namespace Kiwana.Core.Plugins
         public static List<PluginInformation> ScanPluginFolder(string folder)
         {
             List<PluginInformation> plugins = new List<PluginInformation>();
+
+            XmlSchema schema = new XmlSchema();
+            schema.SourceUri = "Config/PluginConfig.xsd";
 
             if (Directory.Exists(folder))
             {
@@ -34,6 +39,8 @@ namespace Kiwana.Core.Plugins
                             plugin.Name = type.Name;
 
                             XmlReader reader = XmlReader.Create(folder + "/" + plugin.Name + "Config.xml");
+                            reader.Settings.Schemas.Add(schema);
+
                             plugin.Config = (PluginConfig)_pluginConfigSerializer.Deserialize(reader);
 
                             plugin.Instance = (Plugin)Activator.CreateInstance(type);

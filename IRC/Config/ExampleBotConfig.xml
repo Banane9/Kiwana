@@ -67,4 +67,5 @@
     </AutherizedUsers>
   </Authorization>
   <About>I'm a C# Bot. Use the help command to find out what commands I support.</About>
+  <DefaultQuit>Bai</DefaultQuit>
 </BotConfig>

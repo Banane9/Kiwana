@@ -1,19 +1,19 @@
 ﻿<?xml version="1.0" encoding="utf-8" ?>
 <PluginConfig>
   <Commands>
-    <Command Name="say" ConsoleServer="Server">
-      <Alias>s</Alias>
+    <Command Name="raw" Rank="1000" ConsoleServer="Both">
+      <Alias>r</Alias>
     </Command>
-    <Command Name="tell" ConsoleServer="Console">
+    <Command Name="tell" Rank="100" ConsoleServer="Console">
       <Alias>msg</Alias>
       <Alias>message</Alias>
       <Alias>m</Alias>
       <Alias>t</Alias>
     </Command>
-    <Command Name="me" ConsoleServer="Server"/>
-    <Command Name="ping" ConsoleServer="Server"/>
-    <Command Name="raw" ConsoleServer="Both">
-      <Alias>r</Alias>
+    <Command Name="say" Rank="0" ConsoleServer="Server">
+      <Alias>s</Alias>
     </Command>
+    <Command Name="me" Rank="0" ConsoleServer="Server"/>
+    <Command Name="ping" Rank="0" AuthenticationRequired="false" ConsoleServer="Server"/>
   </Commands>
 </PluginConfig>

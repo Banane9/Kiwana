@@ -7,15 +7,15 @@ namespace Kiwana.Core.Objects
 {
     public class ChannelUser
     {
-        public bool Authorized { get; set; }
+        public int Rank { get; set; }
 
         public bool Authenticated { get; set; }
 
         public bool AuthenticationRequested { get; set; }
 
-        public ChannelUser(bool authorized = false, bool authenticated = false, bool authenticationRequested = false)
+        public ChannelUser(int rank = 0, bool authenticated = false, bool authenticationRequested = false)
         {
-            Authorized = authorized;
+            Rank = rank;
             Authenticated = authenticated;
             AuthenticationRequested = authenticationRequested;
         }

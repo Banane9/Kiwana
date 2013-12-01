@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using Kiwana.Core.Api.Config;
+using System.Collections.Generic;
 using System.Xml.Serialization;
 
 namespace Kiwana.Core.Config
@@ -20,8 +21,12 @@ namespace Kiwana.Core.Config
         [XmlArrayItem("Prefix")]
         public List<string> Prefixes { get; set; }
 
-        public Authorization Authorization { get; set; }
+        public Permissions Permissions { get; set; }
 
         public string About { get; set; }
+
+        [XmlArray("QuitMessages")]
+        [XmlArrayItem("QuitMessage")]
+        public List<string> QuitMessages { get; set; }
     }
 }
