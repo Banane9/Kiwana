@@ -1,4 +1,4 @@
-﻿using Kiwana.Core.Api;
+﻿using Kiwana.Api;
 using System;
 using System.Collections.Generic;
 using System.Linq;

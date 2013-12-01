@@ -4,14 +4,13 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{DDD9411E-45C1-4D22-81A2-7F8CA2A171F6}</ProjectGuid>
+    <ProjectGuid>{BBB30695-FE77-4448-956A-AEDEA14D3D3F}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>AsciiArt</RootNamespace>
-    <AssemblyName>AsciiArt</AssemblyName>
+    <RootNamespace>Kiwana</RootNamespace>
+    <AssemblyName>Kiwana</AssemblyName>
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
-    <TargetFrameworkProfile />
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -21,20 +20,21 @@
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
-    <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
     <Optimize>true</Optimize>
-    <OutputPath>..\..\..\..\..\Desktop\Kiwana\Plugins\</OutputPath>
+    <OutputPath>..\..\..\..\..\Desktop\Kiwana\</OutputPath>
     <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
-    <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
     <Reference Include="System.Core" />
+    <Reference Include="System.Net.Http" />
+    <Reference Include="System.Net.Http.WebRequest" />
+    <Reference Include="System.Web.Extensions" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="Microsoft.CSharp" />
@@ -42,8 +42,28 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="AsciiArt.cs" />
+    <Compile Include="Client.cs" />
+    <Compile Include="Config\BotConfig.cs">
+      <DependentUpon>BotConfig.xsd</DependentUpon>
+    </Compile>
+    <Compile Include="Config\Permissions.cs" />
+    <Compile Include="Config\Authenticator.cs" />
+    <Compile Include="Config\IrcServer.cs" />
+    <Compile Include="Config\Login.cs" />
+    <Compile Include="Config\UserGroup.cs" />
+    <Compile Include="Objects\Channel.cs" />
+    <Compile Include="Objects\User.cs" />
+    <Compile Include="Plugins\PluginInformation.cs" />
+    <Compile Include="Plugins\PluginInitializationFailedException.cs" />
+    <Compile Include="Plugins\PluginManager.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="app.config" />
+    <None Include="Config\BotConfig.xsd">
+      <SubType>Designer</SubType>
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Kiwana.Api\Kiwana.Api.csproj">
@@ -52,7 +72,12 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-    <Content Include="AsciiArtConfig.xml">
+    <Content Include="Config\BotConfig.xml">
+      <SubType>Designer</SubType>
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Config\ExampleBotConfig.xml">
+      <SubType>Designer</SubType>
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
   </ItemGroup>

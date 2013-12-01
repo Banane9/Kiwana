@@ -3,9 +3,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 2013
 VisualStudioVersion = 12.0.21005.1
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Kiwana.Core", "IRC\Kiwana.Core.csproj", "{BBB30695-FE77-4448-956A-AEDEA14D3D3F}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Kiwana", "Kiwana\Kiwana.csproj", "{BBB30695-FE77-4448-956A-AEDEA14D3D3F}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Kiwana.ConsoleApplication", "Bot\Kiwana.ConsoleApplication.csproj", "{384F39AD-3A81-4612-882B-5901CF02C187}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Kiwana.ConsoleApplication", "Kiwana.ConsoleApplication\Kiwana.ConsoleApplication.csproj", "{384F39AD-3A81-4612-882B-5901CF02C187}"
 	ProjectSection(ProjectDependencies) = postProject
 		{DDD9411E-45C1-4D22-81A2-7F8CA2A171F6} = {DDD9411E-45C1-4D22-81A2-7F8CA2A171F6}
 		{AE9C868B-1606-4661-B9AF-8F9D8A3B5B4C} = {AE9C868B-1606-4661-B9AF-8F9D8A3B5B4C}
@@ -13,11 +13,11 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Kiwana.ConsoleApplication",
 		{80F3F8D3-CF69-4366-9610-41B61C0835E6} = {80F3F8D3-CF69-4366-9610-41B61C0835E6}
 	EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Kiwana.Core.Api", "Kiwana.Plugins.Api\Kiwana.Core.Api.csproj", "{F7C70FC8-CA2B-459F-9764-E8489FF71542}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Kiwana.Api", "Kiwana.Api\Kiwana.Api.csproj", "{F7C70FC8-CA2B-459F-9764-E8489FF71542}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ProbSim", "Kiwana.Plugins.ProbSim\ProbSim.csproj", "{80F3F8D3-CF69-4366-9610-41B61C0835E6}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ProbSim", "ProbSim\ProbSim.csproj", "{80F3F8D3-CF69-4366-9610-41B61C0835E6}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "McStatus", "Kiwana.Plugins.McStatus\McStatus.csproj", "{AE9C868B-1606-4661-B9AF-8F9D8A3B5B4C}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "McStatus", "McStatus\McStatus.csproj", "{AE9C868B-1606-4661-B9AF-8F9D8A3B5B4C}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Essentials", "Essentials\Essentials.csproj", "{89724FAA-AD92-45D6-B43B-29E6C4C6BA8C}"
 EndProject
