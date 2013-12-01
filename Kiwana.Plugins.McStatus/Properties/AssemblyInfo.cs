@@ -5,11 +5,11 @@ using System.Runtime.InteropServices;
 // Allgemeine Informationen über eine Assembly werden über die folgenden 
 // Attribute gesteuert. Ändern Sie diese Attributwerte, um die Informationen zu ändern,
 // die mit einer Assembly verknüpft sind.
-[assembly: AssemblyTitle("Kiwana.Plugins.McStatus")]
-[assembly: AssemblyDescription("")]
+[assembly: AssemblyTitle("McStatus")]
+[assembly: AssemblyDescription("Kiwana Plugin: McStatus")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("")]
-[assembly: AssemblyProduct("Kiwana.Plugins.McStatus")]
+[assembly: AssemblyProduct("McStatus")]
 [assembly: AssemblyCopyright("Copyright ©  2013")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
