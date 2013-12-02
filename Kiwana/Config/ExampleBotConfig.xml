@@ -13,31 +13,50 @@
     <PluginFolder>Plugins</PluginFolder>
   </PluginFolders>
   <Commands>
-    <Command Name="quit" Rank="1000" ConsoleServer="Both">
-      <Alias>die</Alias>
-      <Alias>q</Alias>
-      <Alias>d</Alias>
+    <Command Name="quit">
+      <Rank>1000</Rank>
+      <Aliases>
+        <Alias>die</Alias>
+        <Alias>q</Alias>
+        <Alias>d</Alias>
+      </Aliases>
     </Command>
-    <Command Name="nick" Rank="1000" ConsoleServer="Both">
-      <Alias>n</Alias>
+    <Command Name="nick">
+      <Rank>1000</Rank>
+      <Aliases>
+        <Alias>n</Alias>
+      </Aliases>
     </Command>
-    <Command Name="part" Rank="100" ConsoleServer="Both">
-      <Alias>leave</Alias>
-      <Alias>l</Alias>
-      <Alias>p</Alias>
+    <Command Name="part">
+      <Rank>100</Rank>
+      <Aliases>
+        <Alias>leave</Alias>
+        <Alias>l</Alias>
+        <Alias>p</Alias>
+      </Aliases>
     </Command>
-    <Command Name="join" Rank="100" ConsoleServer="Both">
-      <Alias>enter</Alias>
-      <Alias>e</Alias>
-      <Alias>j</Alias>
+    <Command Name="join">
+      <Rank>100</Rank>
+      <Aliases>
+        <Alias>enter</Alias>
+        <Alias>e</Alias>
+        <Alias>j</Alias>
+      </Aliases>
     </Command>
-    <Command Name="help" Rank="0" AuthenticationRequired="false" ConsoleServer="Both">
-      <Alias>h</Alias>
+    <Command Name="help">
+      <Rank>0</Rank>
+      <Aliases>
+        <Alias>h</Alias>
+      </Aliases>
     </Command>
-    <Command Name="about" Rank="0" AuthenticationRequired="false" ConsoleServer="Both">
-      <Alias>a</Alias>
+    <Command Name="about">
+      <Rank>0</Rank>
+      <Aliases>
+        <Alias>a</Alias>
+      </Aliases>
     </Command>
-    <Command Name="plugins" Rank="0" AuthenticationRequired="false" ConsoleServer="Both">
+    <Command Name="plugins">
+      <Rank>0</Rank>
     </Command>
   </Commands>
   <Prefixes>
@@ -49,7 +68,7 @@
     <Prefix>&amp;</Prefix>
     <Prefix>\?</Prefix>
   </Prefixes>
-  <Permissions>
+  <Permissions DefaultRank="0">
     <Authenticator>
       <HostMask>NickServ!NickServ@services.esper.net</HostMask>
       <AuthenticationCode>3</AuthenticationCode>
@@ -68,6 +87,9 @@
         <User>Other</User>
         <User>OK</User>
         <User>People</User>
+      </UserGroup>
+      <UserGroup Name="Forbidden" Rank="-10">
+
       </UserGroup>
     </UserGroups>
   </Permissions>
