@@ -21,7 +21,7 @@ namespace Kiwana.Objects
             Motd = motd;
             MotdSetter = motdSetter;
             MotdSetDate = motdSetDate > 0 ? new DateTime(motdSetDate) : new DateTime();
-            Users = users != null ? users : new List<string>();
+            Users = users ?? new List<string>();
         }
     }
 }

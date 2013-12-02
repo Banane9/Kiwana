@@ -34,6 +34,7 @@ namespace Kiwana
         public Dictionary<string, User> Users = new Dictionary<string, User>();
 
         private Regex _prefixRegex;
+        private Dictionary<string, Regex> _commandRegexes;
         private Regex _serverCommandRegex;
         private Regex _consoleCommandRegex;
 
@@ -88,12 +89,21 @@ namespace Kiwana
                 NewLine += plugin.Instance.HandleLine;
             }
 
+            
+
+            Initialized = true;
+        }
+
+        private void _generateCommandRegexes()
+        {
             string serverCommandRegex = @"";
             string consoleCommandRegex = @"";
-            for (int i = 0; i < _config.Commands.Count; i++)
-            {
-                Command command = _config.Commands[i];
 
+            List<Command> consoleCommands = _config.Commands.Where(cmd => cmd.ConsoleServer == ConsoleServer.Both || cmd.ConsoleServer == ConsoleServer.Console).ToList();
+            List<Command> serverCommands = _config.Commands.Where(cmd => cmd.ConsoleServer == ConsoleServer.Both || cmd.ConsoleServer == ConsoleServer.Server).ToList();
+
+            foreach (Command command in _config.Commands)
+            {
                 if (command.ConsoleServer == ConsoleServer.Server || command.ConsoleServer == ConsoleServer.Both)
                 {
                     serverCommandRegex += command.Name + "|";
@@ -124,8 +134,6 @@ namespace Kiwana
             }
             _serverCommandRegex = new Regex(serverCommandRegex);
             _consoleCommandRegex = new Regex(consoleCommandRegex);
-
-            Initialized = true;
         }
 
         public void SendData(string command, string argument = "")
