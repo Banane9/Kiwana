@@ -263,24 +263,7 @@ namespace Kiwana
 
                 if (ex.Count > 5)
                 {
-                    if (Util.ServerRegex.IsMatch(ex[0]) && ex[2] == _config.Server.Login.Nick && Util.MessageRegex.IsMatch(ex[4]))
-                    {
-                        if (Channels.ContainsKey(ex[3].ToLower()))
-                        {
-                            string motdSetter = ex[4];
-
-                            if (Util.NickRegex.IsMatch(ex[4]))
-                            {
-                                motdSetter = Util.NickRegex.Match(ex[4]).Value;
-                            }
-                            
-                            Channels[ex[3].ToLower()].MotdSetter = motdSetter;
-                            Channels[ex[3].ToLower()].MotdSetDate = Util.UnixToDateTime(long.Parse(ex[5]));
-
-                            Console.WriteLine("Motd of " + ex[3] + " was set by " + motdSetter + " at " + Channels[ex[3].ToLower()].MotdSetDate.Hour + ":" + Channels[ex[3].ToLower()].MotdSetDate.Minute + " on " + Channels[ex[3].ToLower()].MotdSetDate.Day + "." + Channels[ex[3].ToLower()].MotdSetDate.Month + "." + Channels[ex[3].ToLower()].MotdSetDate.Year);
-                        }
-                    }
-                    else if (ex[1] == "NOTICE" && ex[4] == "ACC")
+                    if (ex[1] == "NOTICE" && ex[4] == "ACC")
                     {
                         if (Util.HostMaskRegex.Match(ex[0]).Value.ToLower() == _config.Permissions.Authenticator.HostMask.ToLower())
                         {
@@ -311,6 +294,23 @@ namespace Kiwana
                                     Console.WriteLine("User " + nick + " is not authenticated.");
                                 }
                             }
+                        }
+                    }
+                    else if (Util.ServerRegex.IsMatch(ex[0]) && ex[2] == _config.Server.Login.Nick && !Util.MessageRegex.IsMatch(ex[4]))
+                    {
+                        if (Channels.ContainsKey(ex[3].ToLower()))
+                        {
+                            string motdSetter = ex[4];
+
+                            if (Util.NickRegex.IsMatch(ex[4]))
+                            {
+                                motdSetter = Util.NickRegex.Match(ex[4]).Value;
+                            }
+                            
+                            Channels[ex[3].ToLower()].MotdSetter = motdSetter;
+                            Channels[ex[3].ToLower()].MotdSetDate = Util.UnixToDateTime(long.Parse(ex[5]));
+
+                            Console.WriteLine("Motd of " + ex[3] + " was set by " + motdSetter + " at " + Channels[ex[3].ToLower()].MotdSetDate.Hour + ":" + Channels[ex[3].ToLower()].MotdSetDate.Minute + " on " + Channels[ex[3].ToLower()].MotdSetDate.Day + "." + Channels[ex[3].ToLower()].MotdSetDate.Month + "." + Channels[ex[3].ToLower()].MotdSetDate.Year);
                         }
                     }
                 }
