@@ -1,58 +1,100 @@
 ﻿<?xml version="1.0" encoding="utf-8" ?>
 <PluginConfig>
   <Commands>
-    <Command Name="doge" Rank="100" ConsoleServer="Server">
-      <Alias>wow</Alias>
+    <Command Name="doge">
+      <Rank>100</Rank>
+      <Aliases>
+        <Alias>wow</Alias>
+      </Aliases>
     </Command>
-    <Command Name="lol" Rank="100" ConsoleServer="Server"/>
-    <Command Name="troll" Rank="100" ConsoleServer="Server">
-      <Alias>trol(ol)+</Alias>
+    <Command Name="lol">
+      <Rank>100</Rank>
     </Command>
-    <Command Name="trollgirl" Rank="100" ConsoleServer="Server">
-      <Alias>trol(ol)+girl</Alias>
+    <Command Name="troll">
+      <Rank>100</Rank>
+      <Aliases>
+        <Alias>trol(ol)+</Alias>
+      </Aliases>
     </Command>
-    <Command Name="bitchplease" Rank="100" ConsoleServer="Server">
-      <Alias>please</Alias>
-      <Alias>bitch</Alias>
-      <Alias>bp</Alias>
+    <Command Name="trollgirl">
+      <Rank>100</Rank>
+      <Aliases>
+        <Alias>trol(ol)+girl</Alias>
+      </Aliases>
     </Command>
-    <Command Name="megusta" Rank="100" ConsoleServer="Server">
-      <Alias>gusta</Alias>
+    <Command Name="bitchplease">
+      <Rank>100</Rank>
+      <Aliases>
+        <Alias>please</Alias>
+        <Alias>bitch</Alias>
+        <Alias>bp</Alias>
+      </Aliases>
     </Command>
-    <Command Name="notbad" Rank="100" ConsoleServer="Server"/>
-    <Command Name="youdon'tsay" Rank="100" ConsoleServer="Server">
-      <Alias>youdontsay</Alias>
-      <Alias>yds</Alias>
+    <Command Name="megusta">
+      <Rank>100</Rank>
+      <Aliases>
+        <Alias>gusta</Alias>
+      </Aliases>
     </Command>
-    <Command Name="areyoufuckingkiddingme" Rank="100" ConsoleServer="Server">
-      <Alias>kidding</Alias>
-      <Alias>areyouf\*ckingkiddingme</Alias>
-      <Alias>ayfkm</Alias>
+    <Command Name="notbad">
+      <Rank>100</Rank>
     </Command>
-    <Command Name="newspaperguy" Rank="100" ConsoleServer="Server">
-      <Alias>newspaper</Alias>
+    <Command Name="youdon'tsay">
+      <Rank>100</Rank>
+      <Aliases>
+        <Alias>youdontsay</Alias>
+        <Alias>yds</Alias>
+      </Aliases>
     </Command>
-    <Command Name="ohgodwhy" Rank="100" ConsoleServer="Server">
-      <Alias>ohmygodwhy</Alias>
-      <Alias>ogw</Alias>
-      <Alias>omgw</Alias>
+    <Command Name="areyoufuckingkiddingme">
+      <Rank>100</Rank>
+      <Aliases>
+        <Alias>kidding</Alias>
+        <Alias>areyouf\*ckingkiddingme</Alias>
+        <Alias>ayfkm</Alias>
+      </Aliases>
     </Command>
-    <Command Name="iknowthatfeelbro" Rank="100" ConsoleServer="Server">
-      <Alias>iknowthatfeel</Alias>
-      <Alias>iktfb</Alias>
-      <Alias>iktf</Alias>
+    <Command Name="newspaperguy">
+      <Rank>100</Rank>
+      <Aliases>
+        <Alias>newspaper</Alias>
+      </Aliases>
     </Command>
-    <Command Name="nothingtodohere" Rank="100" ConsoleServer="Server">
-      <Alias>jetpackguy</Alias>
-      <Alias>jetpack</Alias>
-      <Alias>ntdh</Alias>
-      <Alias>jpg</Alias>
-      <Alias>jp</Alias>
+    <Command Name="ohgodwhy">
+      <Rank>100</Rank>
+      <Aliases>
+        <Alias>ohmygodwhy</Alias>
+        <Alias>ogw</Alias>
+        <Alias>omgw</Alias>
+      </Aliases>
     </Command>
-    <Command Name="nyancat" Rank="100" ConsoleServer="Server">
-      <Alias>((nyan)+)</Alias>
-      <Alias>(nyan)*cat</Alias>
+    <Command Name="iknowthatfeelbro">
+      <Rank>100</Rank>
+      <Aliases>
+        <Alias>iknowthatfeel</Alias>
+        <Alias>iktfb</Alias>
+        <Alias>iktf</Alias>
+      </Aliases>
     </Command>
-    <Command Name="objection" Rank="100" ConsoleServer="Server"/>
+    <Command Name="nothingtodohere">
+      <Rank>100</Rank>
+      <Aliases>
+        <Alias>jetpackguy</Alias>
+        <Alias>jetpack</Alias>
+        <Alias>ntdh</Alias>
+        <Alias>jpg</Alias>
+        <Alias>jp</Alias>
+      </Aliases>
+    </Command>
+    <Command Name="nyancat">
+      <Rank>100</Rank>
+      <Aliases>
+        <Alias>((nyan)+)</Alias>
+        <Alias>(nyan)*cat</Alias>
+      </Aliases>
+    </Command>
+    <Command Name="objection">
+      <Rank>100</Rank>
+    </Command>
   </Commands>
 </PluginConfig>

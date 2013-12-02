@@ -13,9 +13,32 @@ namespace Kiwana.Config
         [XmlArrayItem("PluginFolder")]
         public List<string> PluginFolders { get; set; }
 
+        [XmlIgnore()]
+        public Dictionary<string, Command> Commands { get; set; }
+
         [XmlArray("Commands")]
         [XmlArrayItem("Command")]
-        public List<Command> Commands { get; set; }
+        public CommandInfo[] CommandInfo
+        {
+            get
+            {
+                List<CommandInfo> commandInfo = new List<CommandInfo>();
+                foreach (KeyValuePair<string, Command> command in Commands)
+                {
+                    commandInfo.Add(new CommandInfo(command.Key, command.Value));
+                }
+
+                return commandInfo.ToArray();
+            }
+            set
+            {
+                Commands.Clear();
+                foreach (CommandInfo commandInfo in value)
+                {
+                    Commands.Add(commandInfo.Name, commandInfo.Command);
+                }
+            }
+        }
 
         [XmlArray("Prefixes")]
         [XmlArrayItem("Prefix")]
@@ -30,5 +53,10 @@ namespace Kiwana.Config
         public List<string> QuitMessages { get; set; }
 
         public uint MessageInterval { get; set; }
+
+        public BotConfig()
+        {
+            Commands = new Dictionary<string, Command>();
+        }
     }
 }

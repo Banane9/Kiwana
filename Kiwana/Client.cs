@@ -34,11 +34,10 @@ namespace Kiwana
         public Dictionary<string, User> Users = new Dictionary<string, User>();
 
         private Regex _prefixRegex;
-        private Dictionary<string, Regex> _commandRegexes;
-        private Regex _serverCommandRegex;
-        private Regex _consoleCommandRegex;
+        private Dictionary<string, Regex> _commandRegexes = new Dictionary<string,Regex>();
+        private Regex _commandRegex;
 
-        private Random random = new Random();
+        private Random _random = new Random();
 
         public DateTime LastSend = new DateTime();
 
@@ -53,6 +52,8 @@ namespace Kiwana
             reader.Settings.Schemas.Add(schema);
 
             _config = (BotConfig)serializer.Deserialize(reader);
+
+            Console.Title = _config.Server.Login.Nick + " on " + _config.Server.Name;
         }
 
         public void Init()
@@ -84,56 +85,39 @@ namespace Kiwana
             NewLine += _handleLine;
             foreach (PluginInformation plugin in _plugins)
             {
-                _config.Commands.AddRange(plugin.Config.Commands);
+                foreach (KeyValuePair<string, Command> command in plugin.Config.Commands)
+                {
+                    _config.Commands.Add(command.Key, command.Value);
+                }
+
                 plugin.Instance.SendDataEvent += SendData;
                 NewLine += plugin.Instance.HandleLine;
             }
 
-            
+            _generateCommandRegexes();
 
             Initialized = true;
         }
 
         private void _generateCommandRegexes()
         {
-            string serverCommandRegex = @"";
-            string consoleCommandRegex = @"";
+            string commandRegex = @"^(";
 
-            List<Command> consoleCommands = _config.Commands.Where(cmd => cmd.ConsoleServer == ConsoleServer.Both || cmd.ConsoleServer == ConsoleServer.Console).ToList();
-            List<Command> serverCommands = _config.Commands.Where(cmd => cmd.ConsoleServer == ConsoleServer.Both || cmd.ConsoleServer == ConsoleServer.Server).ToList();
-
-            foreach (Command command in _config.Commands)
+            foreach (KeyValuePair<string, Command> command in _config.Commands)
             {
-                if (command.ConsoleServer == ConsoleServer.Server || command.ConsoleServer == ConsoleServer.Both)
-                {
-                    serverCommandRegex += command.Name + "|";
-                    string alias = Util.JoinStringList(command.Alias, "|");
-                    if (!String.IsNullOrEmpty(alias))
-                    {
-                        serverCommandRegex += alias;
-                        if (i < _config.Commands.Count - 1)
-                        {
-                            serverCommandRegex += "|";
-                        }
-                    }
-                }
+                commandRegex += command.Key + "|";
 
-                if (command.ConsoleServer == ConsoleServer.Console || command.ConsoleServer == ConsoleServer.Both)
+                string aliases = Util.JoinStringList(command.Value.Aliases, "|");
+                
+                if (!string.IsNullOrEmpty(aliases))
                 {
-                    consoleCommandRegex += command.Name + "|";
-                    string alias = Util.JoinStringList(command.Alias, "|");
-                    if (!String.IsNullOrEmpty(alias))
-                    {
-                        consoleCommandRegex += alias;
-                        if (i < _config.Commands.Count - 1)
-                        {
-                            consoleCommandRegex += "|";
-                        }
-                    }
+                    commandRegex += aliases + "|";
+                    _commandRegexes.Add(command.Key, new Regex("^(" + aliases + ")$"));
                 }
+                
             }
-            _serverCommandRegex = new Regex(serverCommandRegex);
-            _consoleCommandRegex = new Regex(consoleCommandRegex);
+
+            _commandRegex = new Regex(commandRegex.TrimEnd('|') + ")$");
         }
 
         public void SendData(string command, string argument = "")
@@ -201,29 +185,26 @@ namespace Kiwana
             }
         }
 
-        public string GetNormalizedCommand(string cmd, bool console)
+        public string GetNormalizedCommand(string cmd)
         {
             string command = "";
 
             //Is it a valid command from the console or from the server
-            if ((_consoleCommandRegex.IsMatch(cmd) && console) || (_serverCommandRegex.IsMatch(cmd) && !console))
+            if (_commandRegex.IsMatch(cmd))
             {
-                foreach (Command commandToCheck in _config.Commands)
+                foreach (KeyValuePair<string, Command> commandToCheck in _config.Commands)
                 {
-                    if (cmd == commandToCheck.Name)
+                    if (cmd == commandToCheck.Key)
                     {
                         command = cmd;
                         break;
                     }
 
-                    string regexString = "^(" + Util.JoinStringList(commandToCheck.Alias, "|") + ")$";
-
-                    if (!String.IsNullOrEmpty(regexString))
+                    if (_commandRegexes.ContainsKey(commandToCheck.Key))
                     {
-                        Regex regex = new Regex(regexString);
-                        if (regex.IsMatch(cmd))
+                        if (_commandRegexes[commandToCheck.Key].IsMatch(cmd))
                         {
-                            command = regex.Replace(cmd, commandToCheck.Name);
+                            command = commandToCheck.Key;
                         }
 
                         if (!String.IsNullOrEmpty(command)) break;
@@ -267,10 +248,10 @@ namespace Kiwana
                                 List<string> userList = new List<string>(ex.Count - 6);
 
                                 //Add the usernames from the list; first name needs to get the colon at the start stripped.
-                                userList.Add(Util.MessageRegex.Match(ex[5]).Value);
+                                userList.Add(Util.MessageRegex.Match(ex[5]).Value.TrimStart(Util.ChannelUserPrefixes));
                                 foreach (string userName in ex.GetRange(6, ex.Count - 6))
                                 {
-                                    userList.Add(userName);
+                                    userList.Add(userName.TrimStart(Util.ChannelUserPrefixes));
                                 }
 
                                 //Set it in the dictionary
@@ -282,11 +263,17 @@ namespace Kiwana
 
                 if (ex.Count > 5)
                 {
-                    if (Util.HostMaskRegex.IsMatch(ex[4]))
+                    if (Util.ServerRegex.IsMatch(ex[0]) && ex[2] == _config.Server.Login.Nick && Util.MessageRegex.IsMatch(ex[4]))
                     {
                         if (Channels.ContainsKey(ex[3].ToLower()))
                         {
-                            string motdSetter = Util.NickRegex.Match(ex[4]).Value;
+                            string motdSetter = ex[4];
+
+                            if (Util.NickRegex.IsMatch(ex[4]))
+                            {
+                                motdSetter = Util.NickRegex.Match(ex[4]).Value;
+                            }
+                            
                             Channels[ex[3].ToLower()].MotdSetter = motdSetter;
                             Channels[ex[3].ToLower()].MotdSetDate = Util.UnixToDateTime(long.Parse(ex[5]));
 
@@ -328,6 +315,14 @@ namespace Kiwana
                     }
                 }
 
+                if (ex.Count == 5)
+                {
+                    if (ex[1] == "MODE" && ex[4] == _config.Server.Login.Nick)
+                    {
+                        Console.WriteLine(Util.NickRegex.Match(ex[0]).Value + " set mode of " + _config.Server.Login.Nick + " in " + ex[2] + " to " + ex[3]);
+                    }
+                }
+
                 if (ex.Count > 4)
                 {
                     if (Util.MessageRegex.IsMatch(ex[4]) && ex[4] != ":End")
@@ -363,12 +358,12 @@ namespace Kiwana
                             Users.Remove(oldNick);
                         }
 
-                        foreach (string channel in Channels.Keys)
+                        foreach (KeyValuePair<string, Channel> channel in Channels)
                         {
-                            if (Channels[channel].Users.Contains(oldNick))
+                            if (channel.Value.Users.Contains(oldNick))
                             {
-                                Channels[channel].Users.Add(newNick);
-                                Channels[channel].Users.Remove(oldNick);
+                                channel.Value.Users.Add(newNick);
+                                channel.Value.Users.Remove(oldNick);
                             }
                         }
                     }
@@ -432,7 +427,7 @@ namespace Kiwana
 
                 if (Util.HostMaskRegex.IsMatch(ex[0]) || console)
                 {
-                    string normalizedCommand = GetNormalizedCommand(command, console);
+                    string normalizedCommand = GetNormalizedCommand(command);
 
                     if (ex[2] == _config.Server.Login.Nick)
                     {
@@ -450,13 +445,13 @@ namespace Kiwana
 
                     if (!string.IsNullOrEmpty(normalizedCommand) && !console)
                     {
-                        Command c = _config.Commands.Single(cmd => cmd.Name == normalizedCommand);
+                        int rank = _config.Commands[normalizedCommand].Rank;
 
-                        authorized = Users[nick].Rank >= c.Rank;
+                        authorized = Users[nick].Rank >= rank;
 
                         if (!authorized)
                         {
-                            SendData("PRIVMSG", ex[2] + " :" + nick + ": You aren't allowed to do this. Minimum rank is [" + c.Rank + "] while yours is only [" + Users[nick].Rank + "]. If this was your first message, try again shortly.");
+                            SendData("PRIVMSG", ex[2] + " :" + nick + ": You aren't allowed to do this. Minimum rank is [" + rank + "] while yours is only [" + Users[nick].Rank + "]. If this was your first message, try again shortly.");
                         }
                     }
 
@@ -469,7 +464,7 @@ namespace Kiwana
         {
             if (!Users.ContainsKey(nick))
             {
-                Users.Add(nick, new User());
+                Users.Add(nick, new User(rank: _config.Permissions.DefaultRank));
             }
 
             Users[nick].AuthenticationRequested = true;
@@ -504,7 +499,7 @@ namespace Kiwana
                                 break;
                             case "help":
                                 string help = "Available commands are: ";
-                                help += Util.JoinStringList(_config.Commands.Where(cmd => cmd.ConsoleServer == (console ? ConsoleServer.Console : ConsoleServer.Server) || cmd.ConsoleServer == ConsoleServer.Both).Select(cmd => cmd.Name).ToList(), ", ");
+                                help += Util.JoinStringList(_config.Commands.Keys.ToList(), ", ");
                                 help += " . With prefixes: " + Util.JoinStringList(_config.Prefixes, ", ") + " .";
                                 SendData("PRIVMSG", ex[2] + " :" + help.Replace("\\", ""));
                                 break;
@@ -540,11 +535,7 @@ namespace Kiwana
                                 break;
                             case "help":
                                 string help = "Available commands are: ";
-                                help += Util.JoinStringList(_config.Commands.Where(cmd => cmd.ConsoleServer == (console ? ConsoleServer.Console : ConsoleServer.Server) || cmd.ConsoleServer == ConsoleServer.Both).Select(cmd => cmd.Name).ToList(), ", ") + ", ";
-                                foreach (PluginInformation plugin in _plugins)
-                                {
-                                    help += Util.JoinStringList(plugin.Config.Commands.Where(cmd => cmd.ConsoleServer == (console ? ConsoleServer.Console : ConsoleServer.Server) || cmd.ConsoleServer == ConsoleServer.Both).Select(cmd => cmd.Name).ToList(), ", ");
-                                }
+                                help += Util.JoinStringList(_config.Commands.Keys.ToList(), ", ");
                                 help += "; With prefixes: " + Util.JoinStringList(_config.Prefixes, ", ");
                                 SendData("PRIVMSG", ex[2] + " :" + help.Replace("\\", ""));
                                 break;
@@ -576,7 +567,7 @@ namespace Kiwana
 
             if (string.IsNullOrEmpty(message))
             {
-                SendData("QUIT", ":" + _config.QuitMessages[new Random().Next(0, _config.QuitMessages.Count - 1)]);
+                SendData("QUIT", ":" + _config.QuitMessages[_random.Next(0, _config.QuitMessages.Count - 1)]);
             }
             else
             {

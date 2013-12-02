@@ -6,6 +6,9 @@ namespace Kiwana.Config
     [XmlRoot("Permissions")]
     public class Permissions
     {
+        [XmlAttribute("DefaultRank")]
+        public int DefaultRank { get; set; }
+
         public Authenticator Authenticator { get; set; }
 
         [XmlArray("UserGroups")]

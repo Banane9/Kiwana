@@ -40,6 +40,11 @@ namespace Kiwana.Api
         public static Regex MessageRegex = new Regex(@"(?<=\:).+");
 
         /// <summary>
+        /// The Prefixes a channel user can have.
+        /// </summary>
+        public static char[] ChannelUserPrefixes = new char[] { '@', '+' };
+
+        /// <summary>
         /// Joins the strings in the list with the glue. Only uses the strings in the range specified.
         /// </summary>
         /// <param name="strings">The list of strings.</param>

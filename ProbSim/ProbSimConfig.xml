@@ -1,15 +1,24 @@
 ﻿<?xml version="1.0" encoding="utf-8" ?>
 <PluginConfig>
   <Commands>
-    <Command Name="random" Rank="0" AuthenticationRequired="false" ConsoleServer="Server">
-      <Alias>rand</Alias>
+    <Command Name="random">
+      <Rank>0</Rank>
+      <Aliases>
+        <Alias>rand</Alias>
+      </Aliases>
     </Command>
-    <Command Name="tosscoin" Rank="0" AuthenticationRequired="false" ConsoleServer="Server">
-      <Alias>toss</Alias>
-      <Alias>coin</Alias>
+    <Command Name="tosscoin">
+      <Rank>0</Rank>
+      <Aliases>
+        <Alias>toss</Alias>
+        <Alias>coin</Alias>
+      </Aliases>
     </Command>
-    <Command Name="dice" Rank="0" AuthenticationRequired="false" ConsoleServer="Server">
-      <Alias>hexahedron</Alias>
+    <Command Name="dice">
+      <Rank>0</Rank>
+      <Aliases>
+        <Alias>hexahedron</Alias>
+      </Aliases>
     </Command>
   </Commands>
 </PluginConfig>

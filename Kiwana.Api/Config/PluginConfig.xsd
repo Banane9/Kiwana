@@ -6,23 +6,19 @@
         <xs:element name="Commands">
           <xs:complexType>
             <xs:sequence>
-              <xs:element maxOccurs="unbounded" name="Command">
+              <xs:element minOccurs="0" maxOccurs="unbounded" name="Command">
                 <xs:complexType mixed="true">
-                  <xs:sequence minOccurs="0">
-                    <xs:element maxOccurs="unbounded" name="Alias" type="xs:string" />
+                  <xs:sequence>
+                    <xs:element name="Rank" type="xs:int" />
+                    <xs:element minOccurs="0" maxOccurs="1" name="Aliases">
+                      <xs:complexType>
+                        <xs:sequence>
+                          <xs:element minOccurs="0" maxOccurs="unbounded" name="Alias" type="xs:string" />
+                        </xs:sequence>
+                      </xs:complexType>
+                    </xs:element>
                   </xs:sequence>
                   <xs:attribute name="Name" type="xs:string" use="required" />
-                  <xs:attribute name="Rank" type="xs:int" use="required" />
-                  <xs:attribute name="AuthenticationRequired" type="xs:boolean" use="optional" default="true" />
-                  <xs:attribute name="ConsoleServer" use="required">
-                    <xs:simpleType>
-                      <xs:restriction base="xs:string">
-                        <xs:enumeration value="Both"/>
-                        <xs:enumeration value="Server"/>
-                        <xs:enumeration value="Console"/>
-                      </xs:restriction>
-                    </xs:simpleType>
-                  </xs:attribute>
                 </xs:complexType>
               </xs:element>
             </xs:sequence>
