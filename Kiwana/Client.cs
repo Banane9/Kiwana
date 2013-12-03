@@ -282,28 +282,31 @@ namespace Kiwana
                             string nick = Util.MessageRegex.Match(ex[3]).Value;
                             //Status = ex[5]
 
-                            if (Users[nick].AuthenticationRequested)
+                            if (Users.ContainsKey(nick))
                             {
-                                Users[nick].AuthenticationRequested = false;
-
-                                if (ex[_config.Permissions.Authenticator.MessagePosition] == _config.Permissions.Authenticator.AuthenticationCode)
+                                if (Users[nick].AuthenticationRequested)
                                 {
-                                    Users[nick].Authenticated = true;
+                                    Users[nick].AuthenticationRequested = false;
 
-                                    foreach (UserGroup group in _config.Permissions.UserGroups)
+                                    if (ex[_config.Permissions.Authenticator.MessagePosition] == _config.Permissions.Authenticator.AuthenticationCode)
                                     {
-                                        if (group.Users.Contains(nick))
-                                        {
-                                            Users[nick].Rank = group.Rank;
-                                            break;
-                                        }
-                                    }
+                                        Users[nick].Authenticated = true;
 
-                                    Console.WriteLine("User " + nick + " is authenticated and has rank [" + Users[nick].Rank + "].");
-                                }
-                                else
-                                {
-                                    Console.WriteLine("User " + nick + " is not authenticated.");
+                                        foreach (UserGroup group in _config.Permissions.UserGroups)
+                                        {
+                                            if (group.Users.Contains(nick))
+                                            {
+                                                Users[nick].Rank = group.Rank;
+                                                break;
+                                            }
+                                        }
+
+                                        Console.WriteLine("User " + nick + " is authenticated and has rank [" + Users[nick].Rank + "].");
+                                    }
+                                    else
+                                    {
+                                        Console.WriteLine("User " + nick + " is not authenticated.");
+                                    }
                                 }
                             }
                         }
