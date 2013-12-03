@@ -122,7 +122,7 @@ namespace Kiwana
             }
             catch (IOException ioEx)
             {
-                Console.WriteLine("*.net Split detected. Attempting to reconnect.");
+                Console.WriteLine("Lost connection to server unexpectedly. Attempting to reconnect.");
                 Running = false;
                 _connect();
             }
@@ -185,7 +185,7 @@ namespace Kiwana
                 }
                 catch (IOException ioEx)
                 {
-                    Console.WriteLine("*.net Split detected. Attempting to reconnect.");
+                    Console.WriteLine("Lost connection to server unexpectedly. Attempting to reconnect.");
                     Running = false;
                     _connect();
                 }
