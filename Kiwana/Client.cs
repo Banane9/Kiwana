@@ -57,8 +57,6 @@ namespace Kiwana
             reader.Settings.Schemas.Add(_configSchema);
 
             _config = (BotConfig)_configSerializer.Deserialize(reader);
-
-            Console.Title = _config.Server.Login.Nick + " on " + _config.Server.Name;
         }
 
         public void Init()
@@ -109,29 +107,39 @@ namespace Kiwana
                 Thread.Sleep((int)_config.MessageInterval - (int)sinceLastSend.TotalMilliseconds);
             }
 
-            if (argument == "")
+            try
             {
-                _streamWriter.WriteLine(command);
-                _streamWriter.Flush();
+                if (argument == "")
+                {
+                    _streamWriter.WriteLine(command);
+                    _streamWriter.Flush();
+                }
+                else
+                {
+                    _streamWriter.WriteLine(command + " " + argument);
+                    _streamWriter.Flush();
+                }
             }
-            else
+            catch (IOException ioEx)
             {
-                _streamWriter.WriteLine(command + " " + argument);
-                _streamWriter.Flush();
+                Console.WriteLine("*.net Split detected. Attempting to reconnect.");
+                Running = false;
+                _connect();
             }
-
+            catch (Exception ex)
+            {
+                Console.WriteLine("Exception [" + ex.GetType() + "] " + ex.Message);
+                Console.WriteLine(ex.StackTrace);
+            }
+            
             Console.WriteLine(command + " " + argument);
             LastSend = new DateTime();
         }
 
-        public async Task Work()
+        private void _connect()
         {
-            if (!Initialized)
-            {
-                Init();
-            }
-
             Console.WriteLine("Trying to establish Connection to " + _config.Server.Url + ":" + _config.Server.Port + " ... ");
+            Console.WriteLine("Kiwana: Connecting ...");
             try
             {
                 _ircConnection = new TcpClient(_config.Server.Url, _config.Server.Port);
@@ -145,22 +153,45 @@ namespace Kiwana
 
                 Console.WriteLine("Success");
                 Running = true;
+
+                Console.Title = _config.Server.Login.Nick + " on " + _config.Server.Name;
             }
             catch
             {
                 Console.WriteLine("Failure");
                 Running = false;
+
+                Console.Title = "Kiwana: Connection failed.";
             }
+        }
+
+        public async Task Work()
+        {
+            if (!Initialized)
+            {
+                Init();
+            }
+
+            _connect();
             
             while(Running)
             {
                 try
                 {
-                    ParseLine(_streamReader.ReadLine());
+                    string line = _streamReader.ReadLine();
+
+                    if (!string.IsNullOrEmpty(line))
+                        ParseLine(line);
+                }
+                catch (IOException ioEx)
+                {
+                    Console.WriteLine("*.net Split detected. Attempting to reconnect.");
+                    Running = false;
+                    _connect();
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine("Exception " + ex.Message);
+                    Console.WriteLine("Exception [" + ex.GetType() + "] " + ex.Message);
                     Console.WriteLine(ex.StackTrace);
                 }
             }
