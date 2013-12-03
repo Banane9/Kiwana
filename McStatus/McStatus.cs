@@ -52,7 +52,7 @@ namespace McStatus
             foreach (string key in mcStatus.Keys)
             {
                 if (ServiceNames.ContainsKey(key) && StatusMessages.ContainsKey(mcStatus[key]))
-                    SendData("PRIVMSG", recipient + " :" + ServiceNames[key] + ": " + StatusMessages[mcStatus[key]]);
+                    SendData(MessageTypes.PRIVMSG, recipient + " :" + ServiceNames[key] + ": " + StatusMessages[mcStatus[key]]);
             }
         }
 
@@ -74,31 +74,31 @@ namespace McStatus
 
             if (notOk.Count == 0)
             {
-                SendData("PRIVMSG", recipient + " :All services healthy. All is good!");
+                SendData(MessageTypes.PRIVMSG, recipient + " :All services healthy. All is good!");
             }
             else
             {
-                SendData("PRIVMSG", recipient + " :These services aren't ok:");
+                SendData(MessageTypes.PRIVMSG, recipient + " :These services aren't ok:");
                 foreach (string key in notOk)
                 {
-                    SendData("PRIVMSG", recipient + " :" + ServiceNames[key] + ": " + StatusMessages[mcStatus[key]]);
+                    SendData(MessageTypes.PRIVMSG, recipient + " :" + ServiceNames[key] + ": " + StatusMessages[mcStatus[key]]);
                 }
             }
         }
 
-        public override void HandleLine(List<string> ex, string command, bool userAuthenticated, bool userAuthorized, bool console)
+        public override void HandleLine(List<string> ex, string recipient, string command, bool userAuthorized, bool console)
         {
             if (userAuthorized)
             {
                 switch (command)
                 {
                     case "verbosemcstatus":
-                        SendData("PRIVMSG", ex[2] + " :Retrieving status of Minecraft services... Minor WOT incoming...");
-                        _writeMcStatusVerbose(ex[2]);
+                        SendData(MessageTypes.PRIVMSG, recipient + " :Retrieving status of Minecraft services... Minor WOT incoming...");
+                        _writeMcStatusVerbose(recipient);
                         break;
                     case "mcstatus":
-                        SendData("PRIVMSG", ex[2] + " :Retrieving status of Minecraft services...");
-                        _writeMcStatus(ex[2]);
+                        SendData(MessageTypes.PRIVMSG, recipient + " :Retrieving status of Minecraft services...");
+                        _writeMcStatus(recipient);
                         break;
                 }
             }

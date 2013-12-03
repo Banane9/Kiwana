@@ -5,56 +5,56 @@ namespace AsciiArt
 {
     public class AsciiArt : Plugin
     {
-        public override void HandleLine(List<string> ex, string command, bool userAuthenticated, bool userAuthorized, bool console)
+        public override void HandleLine(List<string> ex, string recipient, string command, bool userAuthorized, bool console)
         {
             if (userAuthorized)
             {
                 switch (command)
                 {
                     case "doge":
-                        _sendArt(ex[2], _doge);
+                        _sendArt(recipient, _doge);
                         break;
                     case "lol":
-                        _sendArt(ex[2], _lol);
+                        _sendArt(recipient, _lol);
                         break;
                     case "troll":
-                        _sendArt(ex[2], _troll);
+                        _sendArt(recipient, _troll);
                         break;
                     case "trollgirl":
-                        _sendArt(ex[2], _trollGirl);
+                        _sendArt(recipient, _trollGirl);
                         break;
                     case "bitchplease":
-                        _sendArt(ex[2], _bitchPlease);
+                        _sendArt(recipient, _bitchPlease);
                         break;
                     case "megusta":
-                        _sendArt(ex[2], _meGusta);
+                        _sendArt(recipient, _meGusta);
                         break;
                     case "notbad":
-                        _sendArt(ex[2], _notBad);
+                        _sendArt(recipient, _notBad);
                         break;
                     case "youdon'tsay":
-                        _sendArt(ex[2], _youDontSay);
+                        _sendArt(recipient, _youDontSay);
                         break;
                     case "areyoufuckingkiddingme":
-                        _sendArt(ex[2], _areYouFuckingKiddingMe);
+                        _sendArt(recipient, _areYouFuckingKiddingMe);
                         break;
                     case "newspaperguy":
-                        _sendArt(ex[2], _newspaperGuy);
+                        _sendArt(recipient, _newspaperGuy);
                         break;
                     case "ohgodwhy":
-                        _sendArt(ex[2], _ohGodWhy);
+                        _sendArt(recipient, _ohGodWhy);
                         break;
                     case "iknowthatfeelbro":
-                        _sendArt(ex[2], _iKnowThatFeelBro);
+                        _sendArt(recipient, _iKnowThatFeelBro);
                         break;
                     case "nothingtodohere":
-                        _sendArt(ex[2], _nothingToDoHere);
+                        _sendArt(recipient, _nothingToDoHere);
                         break;
                     case "nyancat":
-                        _sendArt(ex[2], _nyanCat);
+                        _sendArt(recipient, _nyanCat);
                         break;
                     case "objection":
-                        _sendArt(ex[2], _objection);
+                        _sendArt(recipient, _objection);
                         break;
                 }
             }
@@ -65,7 +65,7 @@ namespace AsciiArt
         {
             foreach (string line in art)
             {
-                SendData("PRIVMSG", recipient + " :" + line);
+                SendData(MessageTypes.PRIVMSG, recipient + " :" + line);
             }
         }
 

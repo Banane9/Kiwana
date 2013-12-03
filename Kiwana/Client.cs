@@ -99,7 +99,7 @@ namespace Kiwana
             _commandRegex = new Regex(commandRegex.TrimEnd('|') + ")$");
         }
 
-        public void SendData(string command, string argument = "")
+        public void SendData(MessageTypes messageType, string argument = "")
         {
             TimeSpan sinceLastSend = new DateTime() - LastSend;
             if (sinceLastSend.TotalMilliseconds < _config.MessageInterval)
@@ -111,12 +111,12 @@ namespace Kiwana
             {
                 if (argument == "")
                 {
-                    _streamWriter.WriteLine(command);
+                    _streamWriter.WriteLine(messageType.ToString());
                     _streamWriter.Flush();
                 }
                 else
                 {
-                    _streamWriter.WriteLine(command + " " + argument);
+                    _streamWriter.WriteLine(messageType.ToString() + " " + argument);
                     _streamWriter.Flush();
                 }
             }
@@ -132,7 +132,7 @@ namespace Kiwana
                 Console.WriteLine(ex.StackTrace);
             }
             
-            Console.WriteLine(command + " " + argument);
+            Console.WriteLine(messageType.ToString() + " " + argument);
             LastSend = new DateTime();
         }
 
@@ -147,9 +147,9 @@ namespace Kiwana
                 _streamReader = new StreamReader(_networkStream);
                 _streamWriter = new StreamWriter(_networkStream);
 
-                SendData("PASS", _config.Server.Login.Password);
-                SendData("NICK", _config.Server.Login.Name);
-                SendData("USER", _config.Server.Login.Nick + " Owner Banane9 :" + _config.Server.Login.Name);
+                SendData(MessageTypes.PASS, _config.Server.Login.Password);
+                SendData(MessageTypes.NICK, _config.Server.Login.Nick);
+                SendData(MessageTypes.USER, _config.Server.Login.Nick + " Owner Banane9 :" + _config.Server.Login.Name);
 
                 Console.WriteLine("Success");
                 Running = true;
@@ -241,7 +241,7 @@ namespace Kiwana
                     if (ex[0] == "PING")
                     {
                         Console.WriteLine("PING " + ex[1]);
-                        SendData("PONG", ex[1]);
+                        SendData(MessageTypes.PONG, ex[1]);
                     }
                 }
 
@@ -441,9 +441,11 @@ namespace Kiwana
                 {
                     string normalizedCommand = GetNormalizedCommand(command);
 
+                    string recipient = ex[2];
+
                     if (ex[2] == _config.Server.Login.Nick)
                     {
-                        ex[2] = Util.NickRegex.Match(ex[0]).Value;
+                        recipient = Util.NickRegex.Match(ex[0]).Value;
                     }
 
                     string nick = Util.NickRegex.Match(ex[0]).Value;
@@ -463,11 +465,11 @@ namespace Kiwana
 
                         if (!authorized)
                         {
-                            SendData("PRIVMSG", ex[2] + " :" + nick + ": You aren't allowed to do this. Minimum rank is [" + rank + "] while yours is only [" + Users[nick].Rank + "]. If this was your first message, try again shortly.");
+                            SendData(MessageTypes.PRIVMSG, recipient + " :" + nick + ": You aren't allowed to do this. Minimum rank is [" + rank + "] while yours is only [" + Users[nick].Rank + "]. If this was your first message, try again shortly.");
                         }
                     }
 
-                    NewLine(ex, normalizedCommand, console ? true : Users[nick].Authenticated, string.IsNullOrEmpty(normalizedCommand) ? true : console ? true : authorized, console);
+                    NewLine(ex, recipient, normalizedCommand, console ? true : authorized, console);
                 }
             }
         }
@@ -482,10 +484,10 @@ namespace Kiwana
             Users[nick].AuthenticationRequested = true;
 
             //Request Authentication
-            SendData("PRIVMSG", Util.NickRegex.Match(_config.Permissions.Authenticator.HostMask).Value + " :ACC " + nick);
+            SendData(MessageTypes.PRIVMSG, Util.NickRegex.Match(_config.Permissions.Authenticator.HostMask).Value + " :ACC " + nick);
         }
 
-        private void _handleLine(List<string> ex, string command, bool userAuthenticated, bool userAuthorized, bool console)
+        private void _handleLine(List<string> ex, string recipient, string command, bool userAuthorized, bool console)
         {
             if (userAuthorized)
             {
@@ -497,7 +499,7 @@ namespace Kiwana
                         switch (command)
                         {
                             case "join":
-                                SendData("JOIN", Util.JoinStringList(ex, ",", 4));
+                                SendData(MessageTypes.JOIN, Util.JoinStringList(ex, ",", 4));
                                 foreach (string channel in ex.GetRange(4, ex.Count - 4))
                                 {
                                     if (!Channels.ContainsKey(channel.ToLower()))
@@ -507,23 +509,23 @@ namespace Kiwana
                                 }
                                 break;
                             case "about":
-                                SendData("PRIVMSG", ex[2] + " :" + _config.About);
+                                SendData(MessageTypes.PRIVMSG, recipient + " :" + _config.About);
                                 break;
                             case "help":
                                 string help = "Available commands are: ";
                                 help += Util.JoinStringList(_config.Commands.Keys.ToList(), ", ");
                                 help += " . With prefixes: " + Util.JoinStringList(_config.Prefixes, ", ") + " .";
-                                SendData("PRIVMSG", ex[2] + " :" + help.Replace("\\", ""));
+                                SendData(MessageTypes.PRIVMSG, recipient + " :" + help.Replace("\\", ""));
                                 break;
                             case "letmegooglethatforyou":
-                                SendData("PRIVMSG", ex[2] + " :http://lmgtfy.com/?q=" + Util.JoinStringList(ex, "+", 4));
+                                SendData(MessageTypes.PRIVMSG, recipient + " :http://lmgtfy.com/?q=" + Util.JoinStringList(ex, "+", 4));
                                 break;
                             case "nick":
-                                SendData("NICK", Util.JoinStringList(ex, "_", 4));
+                                SendData(MessageTypes.NICK, Util.JoinStringList(ex, "_", 4));
                                 _config.Server.Login.Nick = Util.JoinStringList(ex, "_", 4);
                                 break;
                             case "part":
-                                SendData("PART", Util.JoinStringList(ex, ",", 4));
+                                SendData(MessageTypes.PART, Util.JoinStringList(ex, ",", 4));
 
                                 foreach (string channel in ex.GetRange(4, ex.Count - 4))
                                 {
@@ -541,21 +543,21 @@ namespace Kiwana
                                         {
                                             if (!string.IsNullOrEmpty(ex[5]))
                                             {
-                                                SendData("PRIVMSG", ex[2] + " :Reloading config from " + ex[5] + ".");
+                                                SendData(MessageTypes.PRIVMSG, recipient + " :Reloading config from " + ex[5] + ".");
                                                 ReloadConfig(ex[5]);
                                             }
                                         }
                                         else
                                         {
-                                            SendData("PRIVMSG", ex[2] + " :Reloading config from default config file.");
+                                            SendData(MessageTypes.PRIVMSG, recipient + " :Reloading config from default config file.");
                                             ReloadConfig();
                                         }
-                                        SendData("PRIVMSG", ex[2] + " :Done!");
+                                        SendData(MessageTypes.PRIVMSG, recipient + " :Done!");
                                         break;
                                     case "plugins":
-                                        SendData("PRIVMSG", ex[2] + " :Reloading plugins.");
+                                        SendData(MessageTypes.PRIVMSG, recipient + " :Reloading plugins.");
                                         ReloadPlugins();
-                                        SendData("PRIVMSG", ex[2] + " :Done!");
+                                        SendData(MessageTypes.PRIVMSG, recipient + " :Done!");
                                         break;
                                 }
                                 break;
@@ -569,21 +571,21 @@ namespace Kiwana
                         switch (command)
                         {
                             case "about":
-                                SendData("PRIVMSG", ex[2] + " :" + _config.About);
+                                SendData(MessageTypes.PRIVMSG, recipient + " :" + _config.About);
                                 break;
                             case "help":
                                 string help = "Available commands are: ";
                                 help += Util.JoinStringList(_config.Commands.Keys.ToList(), ", ");
                                 help += "; With prefixes: " + Util.JoinStringList(_config.Prefixes, ", ");
-                                SendData("PRIVMSG", ex[2] + " :" + help.Replace("\\", ""));
+                                SendData(MessageTypes.PRIVMSG, recipient + " :" + help.Replace("\\", ""));
                                 break;
                             case "plugins":
                                 string plugins = "Loaded plugins: ";
                                 plugins += Util.JoinStringList(Plugins.Keys.ToList(), ", ");
-                                SendData("PRIVMSG", ex[2] + " :" + plugins + ".");
+                                SendData(MessageTypes.PRIVMSG, recipient + " :" + plugins + ".");
                                 break;
                             case "part":
-                                SendData("PART", ex[2]);
+                                SendData(MessageTypes.PART, ex[2]);
 
                                 if (Channels.ContainsKey(ex[2]))
                                 {
@@ -591,10 +593,10 @@ namespace Kiwana
                                 }
                                 break;
                             case "reload":
-                                SendData("PRIVMSG", ex[2] + " :Reloading plugins and config from default config file.");
+                                SendData(MessageTypes.PRIVMSG, recipient + " :Reloading plugins and config from default config file.");
                                 ReloadConfig();
                                 ReloadPlugins();
-                                SendData("PRIVMSG", ex[2] + " :Done!");
+                                SendData(MessageTypes.PRIVMSG, recipient + " :Done!");
                                 break;
                             case "quit":
                                 Quit();
@@ -611,11 +613,11 @@ namespace Kiwana
 
             if (string.IsNullOrEmpty(message))
             {
-                SendData("QUIT", ":" + _config.QuitMessages[_random.Next(0, _config.QuitMessages.Count - 1)]);
+                SendData(MessageTypes.QUIT, ":" + _config.QuitMessages[_random.Next(0, _config.QuitMessages.Count - 1)]);
             }
             else
             {
-                SendData("QUIT", ":" + message);
+                SendData(MessageTypes.QUIT, ":" + message);
             }
 
             _unloadPlugins();
@@ -678,7 +680,7 @@ namespace Kiwana
             }
         }
 
-        public delegate void NewLineHandler(List<string> ex, string command, bool userAuthenticated, bool userAuthorized, bool console);
+        public delegate void NewLineHandler(List<string> ex, string recipient, string command, bool userAuthorized, bool console);
 
         public event NewLineHandler NewLine;
     }

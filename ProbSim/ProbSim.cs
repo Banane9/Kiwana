@@ -9,7 +9,7 @@ namespace ProbSim
     {
         private Random _random = new Random();
 
-        public override void HandleLine(List<string> ex, string command, bool userAuthenticated, bool userAuthorized, bool console)
+        public override void HandleLine(List<string> ex, string recipient, string command, bool userAuthorized, bool console)
         {
             if (userAuthorized)
             {
@@ -20,11 +20,11 @@ namespace ProbSim
                         case "random":
                             try
                             {
-                                SendData("PRIVMSG", ex[2] + " :" + Util.NickRegex.Match(ex[0]) + ": " + _random.Next(int.Parse(Regex.Match(ex[4], @"\d+").Value), int.Parse(Regex.Match(ex[5], @"\d+").Value)));
+                                SendData(MessageTypes.PRIVMSG, recipient + " :" + Util.NickRegex.Match(ex[0]) + ": " + _random.Next(int.Parse(Regex.Match(ex[4], @"\d+").Value), int.Parse(Regex.Match(ex[5], @"\d+").Value)));
                             }
                             catch
                             {
-                                SendData("PRIVMSG", ex[2] + " :" + Util.NickRegex.Match(ex[0]) + ": Couldn't parse numbers.");
+                                SendData(MessageTypes.PRIVMSG, recipient + " :" + Util.NickRegex.Match(ex[0]) + ": Couldn't parse numbers.");
                             }
                             break;
                         case "dice":
@@ -71,16 +71,16 @@ namespace ProbSim
                                         nextMode = Regex.Match(diceFormula.Value, @"(-|\+)$").Value;
                                     }
 
-                                    SendData("PRIVMSG", ex[2] + " :" + Util.NickRegex.Match(ex[0]) + ": " + value);
+                                    SendData(MessageTypes.PRIVMSG, recipient + " :" + Util.NickRegex.Match(ex[0]) + ": " + value);
                                 }
                                 else
                                 {
-                                    SendData("PRIVMSG", ex[2] + " :" + Util.NickRegex.Match(ex[0]) + ": Invalid dice formula.");
+                                    SendData(MessageTypes.PRIVMSG, recipient + " :" + Util.NickRegex.Match(ex[0]) + ": Invalid dice formula.");
                                 }
                             }
                             catch
                             {
-                                SendData("PRIVMSG", ex[2] + " :" + Util.NickRegex.Match(ex[0]) + ": Couldn't parse dice formula.");
+                                SendData(MessageTypes.PRIVMSG, recipient + " :" + Util.NickRegex.Match(ex[0]) + ": Couldn't parse dice formula.");
                             }
                             break;
                     }
@@ -90,7 +90,7 @@ namespace ProbSim
                     switch (command)
                     {
                         case "tosscoin":
-                            SendData("PRIVMSG", ex[2] + " :" + Util.NickRegex.Match(ex[0]) + ": " + (_random.Next(1, 3) == 1 ? "Tails" : "Heads"));
+                            SendData(MessageTypes.PRIVMSG, recipient + " :" + Util.NickRegex.Match(ex[0]) + ": " + (_random.Next(1, 3) == 1 ? "Tails" : "Heads"));
                             break;
                     }
                 }
