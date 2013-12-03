@@ -3,7 +3,7 @@ using System.Xml;
 using System.Xml.Schema;
 using System.Xml.Serialization;
 
-namespace Kiwana.Api.Config
+namespace Kiwana.Config
 {
     [XmlRoot("Command")]
     public class CommandInfo : IXmlSerializable

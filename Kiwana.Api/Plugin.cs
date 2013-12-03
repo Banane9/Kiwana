@@ -44,15 +44,15 @@ namespace Kiwana.Api
         /// <summary>
         /// Called when the class is initialized. Load data, etc. here.
         /// </summary>
-        public virtual void Init()
+        public virtual void Load()
         {
             return;
         }
 
         /// <summary>
-        /// Called when the bot shuts down. Save data, et.c here.
+        /// Called when the bot shuts down. Save data, etc. here.
         /// </summary>
-        public virtual void Disable()
+        public virtual void Unload()
         {
             return;
         }

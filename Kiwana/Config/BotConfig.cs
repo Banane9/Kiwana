@@ -1,5 +1,4 @@
-﻿using Kiwana.Api.Config;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Xml.Serialization;
 
 namespace Kiwana.Config

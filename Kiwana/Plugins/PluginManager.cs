@@ -1,5 +1,4 @@
 ﻿using Kiwana.Api;
-using Kiwana.Api.Config;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -12,14 +11,9 @@ namespace Kiwana.Plugins
 {
     public static class PluginManager
     {
-        private static XmlSerializer _pluginConfigSerializer = new XmlSerializer(typeof(PluginConfig));
-
-        public static List<PluginInformation> ScanPluginFolder(string folder)
+        public static Dictionary<string, Plugin> ScanPluginFolder(string folder)
         {
-            List<PluginInformation> plugins = new List<PluginInformation>();
-
-            XmlSchema schema = new XmlSchema();
-            schema.SourceUri = "Config/PluginConfig.xsd";
+            Dictionary<string, Plugin> plugins = new Dictionary<string, Plugin>();
 
             if (Directory.Exists(folder))
             {
@@ -32,17 +26,7 @@ namespace Kiwana.Plugins
                     {
                         if (type.IsSubclassOf(typeof(Plugin)))
                         {
-                            PluginInformation plugin = new PluginInformation();
-                            plugin.Name = type.Name;
-
-                            XmlReader reader = XmlReader.Create(folder + "/" + plugin.Name + "Config.xml");
-                            reader.Settings.Schemas.Add(schema);
-
-                            plugin.Config = (PluginConfig)_pluginConfigSerializer.Deserialize(reader);
-
-                            plugin.Instance = (Plugin)Activator.CreateInstance(type);
-
-                            plugins.Add(plugin);
+                            plugins.Add(type.Name, (Plugin)Activator.CreateInstance(type));
                         }
                     }
                 }

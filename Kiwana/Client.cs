@@ -11,7 +11,6 @@ using System.Threading.Tasks;
 using Kiwana.Plugins;
 using System.Xml.Serialization;
 using System.Xml;
-using Kiwana.Api.Config;
 using System.Threading;
 using System.Xml.Schema;
 
@@ -23,13 +22,11 @@ namespace Kiwana
         public bool Running = true;
 
         private TcpClient _ircConnection;
-        private BotConfig _config;
         private NetworkStream _networkStream;
         private StreamReader _streamReader;
         private StreamWriter _streamWriter;
 
-        private List<PluginInformation> _plugins = new List<PluginInformation>();
-
+        public Dictionary<string, Plugin> Plugins = new Dictionary<string, Plugin>();
         public Dictionary<string, Channel> Channels = new Dictionary<string, Channel>();
         public Dictionary<string, User> Users = new Dictionary<string, User>();
 
@@ -41,57 +38,41 @@ namespace Kiwana
 
         public DateTime LastSend = new DateTime();
 
+        private XmlSerializer _configSerializer = new XmlSerializer(typeof(BotConfig));
+        private XmlSchema _configSchema = new XmlSchema();
+        private string _configFile;
+        private BotConfig _config;
+
         public Client(string config)
         {
-            XmlSerializer serializer = new XmlSerializer(typeof(BotConfig));
+            _configSchema.SourceUri = "Config/BotConfig.xsd";
+            _configFile = config;
 
-            XmlSchema schema = new XmlSchema();
-            schema.SourceUri = "Config/BotConfig.xsd";
+            _loadSettings(config);
+        }
 
+        private void _loadSettings(string config)
+        {
             XmlReader reader = XmlReader.Create(config);
-            reader.Settings.Schemas.Add(schema);
+            reader.Settings.Schemas.Add(_configSchema);
 
-            _config = (BotConfig)serializer.Deserialize(reader);
+            _config = (BotConfig)_configSerializer.Deserialize(reader);
 
             Console.Title = _config.Server.Login.Nick + " on " + _config.Server.Name;
         }
 
         public void Init()
         {
-            foreach (string pluginFolder in _config.PluginFolders)
-            {
-                _plugins.AddRange(PluginManager.ScanPluginFolder(pluginFolder));
-            }
-
-            Console.WriteLine("Initializing Plugins ...");
-            foreach (PluginInformation plugin in _plugins)
-            {
-                Console.Write("  - " + plugin.Name + " ... ");
-                try
-                {
-                    plugin.Instance.Init();
-                    Console.WriteLine("OK");
-                }
-                catch (Exception e)
-                {
-                    Console.WriteLine("Failure");
-                    throw new PluginInitializationFailedException("Plugin " + plugin.Name + " failed initalization.", e);
-                }
-            }
+            _loadPlugins();
 
             _prefixRegex = new Regex(@"(?<=" + Util.JoinStringList(_config.Prefixes, "|") + ").+");
 
             //Add all the listeners to the NewLine event
             NewLine += _handleLine;
-            foreach (PluginInformation plugin in _plugins)
+            foreach (KeyValuePair<string, Plugin> plugin in Plugins)
             {
-                foreach (KeyValuePair<string, Command> command in plugin.Config.Commands)
-                {
-                    _config.Commands.Add(command.Key, command.Value);
-                }
-
-                plugin.Instance.SendDataEvent += SendData;
-                NewLine += plugin.Instance.HandleLine;
+                plugin.Value.SendDataEvent += SendData;
+                NewLine += plugin.Value.HandleLine;
             }
 
             _generateCommandRegexes();
@@ -521,6 +502,32 @@ namespace Kiwana
                                     }
                                 }
                                 break;
+                            case "reload":
+                                switch (ex[4].ToLower())
+                                {
+                                    case "config":
+                                        if (ex.Count > 5)
+                                        {
+                                            if (!string.IsNullOrEmpty(ex[5]))
+                                            {
+                                                SendData("PRIVMSG", ex[2] + " :Reloading config from " + ex[5] + ".");
+                                                ReloadConfig(ex[5]);
+                                            }
+                                        }
+                                        else
+                                        {
+                                            SendData("PRIVMSG", ex[2] + " :Reloading config from default config file.");
+                                            ReloadConfig();
+                                        }
+                                        SendData("PRIVMSG", ex[2] + " :Done!");
+                                        break;
+                                    case "plugins":
+                                        SendData("PRIVMSG", ex[2] + " :Reloading plugins.");
+                                        ReloadPlugins();
+                                        SendData("PRIVMSG", ex[2] + " :Done!");
+                                        break;
+                                }
+                                break;
                             case "quit":
                                 Quit(Util.JoinStringList(ex, " ", 4));
                                 break;
@@ -541,7 +548,7 @@ namespace Kiwana
                                 break;
                             case "plugins":
                                 string plugins = "Loaded plugins: ";
-                                plugins += Util.JoinStringList(_plugins.Select(plugin => plugin.Name).ToList(), ", ");
+                                plugins += Util.JoinStringList(Plugins.Keys.ToList(), ", ");
                                 SendData("PRIVMSG", ex[2] + " :" + plugins + ".");
                                 break;
                             case "part":
@@ -551,6 +558,12 @@ namespace Kiwana
                                 {
                                     Channels.Remove(ex[2]);
                                 }
+                                break;
+                            case "reload":
+                                SendData("PRIVMSG", ex[2] + " :Reloading plugins and config from default config file.");
+                                ReloadConfig();
+                                ReloadPlugins();
+                                SendData("PRIVMSG", ex[2] + " :Done!");
                                 break;
                             case "quit":
                                 Quit();
@@ -574,15 +587,64 @@ namespace Kiwana
                 SendData("QUIT", ":" + message);
             }
 
-            Console.WriteLine("Disabling plugins ...");
-            foreach (Kiwana.Plugins.PluginInformation plugin in _plugins)
-            {
-                Console.Write("  - " + plugin.Name + " ... ");
-                plugin.Instance.Disable();
-                Console.WriteLine("OK");
-            }
+            _unloadPlugins();
 
             Console.WriteLine("Bot stopped.");
+        }
+
+        public void ReloadConfig(string config = "")
+        {
+            if (string.IsNullOrEmpty(config))
+            {
+                _loadSettings(_configFile);
+            }
+            else
+            {
+                _loadSettings(config);
+            }
+        }
+
+        public void ReloadPlugins()
+        {
+            _unloadPlugins();
+            _loadPlugins();
+        }
+
+        private void _loadPlugins()
+        {
+            Console.WriteLine("Loading Plugins ...");
+
+            Plugins.Clear();
+            foreach (string pluginFolder in _config.PluginFolders)
+            {
+                Plugins.AddRange(PluginManager.ScanPluginFolder(pluginFolder));
+            }
+
+            foreach (KeyValuePair<string, Plugin> plugin in Plugins)
+            {
+                Console.Write("  - " + plugin.Key + " ... ");
+                try
+                {
+                    plugin.Value.Load();
+                    Console.WriteLine("OK");
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine("Failure");
+                    throw new PluginLoadFailedException("Plugin " + plugin.Key + " failed to load.", e);
+                }
+            }
+        }
+
+        private void _unloadPlugins()
+        {
+            Console.WriteLine("Disabling plugins ...");
+            foreach (KeyValuePair<string, Plugin> plugin in Plugins)
+            {
+                Console.Write("  - " + plugin.Key + " ... ");
+                plugin.Value.Unload();
+                Console.WriteLine("OK");
+            }
         }
 
         public delegate void NewLineHandler(List<string> ex, string command, bool userAuthenticated, bool userAuthorized, bool console);

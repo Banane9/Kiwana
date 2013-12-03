@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Xml.Serialization;
 
-namespace Kiwana.Api.Config
+namespace Kiwana.Config
 {
     public class Command
     {

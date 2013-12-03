@@ -46,11 +46,6 @@
     <Compile Include="ProbSim.cs" />
   </ItemGroup>
   <ItemGroup>
-    <Content Include="ProbSimConfig.xml">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
-  </ItemGroup>
-  <ItemGroup>
     <ProjectReference Include="..\Kiwana.Api\Kiwana.Api.csproj">
       <Project>{f7c70fc8-ca2b-459f-9764-e8489ff71542}</Project>
       <Name>Kiwana.Core.Api</Name>
