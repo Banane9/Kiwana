@@ -55,7 +55,6 @@
     <Compile Include="Config\UserGroup.cs" />
     <Compile Include="Objects\Channel.cs" />
     <Compile Include="Objects\User.cs" />
-    <Compile Include="Plugins\PluginInformation.cs" />
     <Compile Include="Plugins\PluginLoadFailedException.cs" />
     <Compile Include="Plugins\PluginManager.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

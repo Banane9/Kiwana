@@ -5,7 +5,7 @@ using System.Text.RegularExpressions;
 namespace Kiwana.Api
 {
     /// <summary>
-    /// Some useful utilities
+    /// Class that adds useful Utilities.
     /// </summary>
     public static class Util
     {

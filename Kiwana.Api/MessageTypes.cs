@@ -1,5 +1,8 @@
 ﻿namespace Kiwana.Api
 {
+    /// <summary>
+    /// Enum for the MessageTypes.
+    /// </summary>
     public enum MessageTypes
     {
         PRIVMSG,

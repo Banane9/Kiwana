@@ -8,13 +8,20 @@ using System.Xml.Serialization;
 
 namespace Kiwana.ConsoleApplication
 {
+    /// <summary>
+    /// The Class that runs the bot inside a Console Application.
+    /// </summary>
     class Program
     {
+        /// <summary>
+        /// The method that is executed when the program starts.
+        /// </summary>
+        /// <param name="arg">Arguments passed to the method.</param>
         static void Main(string[] arg)
         {
             Console.Title = "Kiwana";
 
-            Client client = new Client("Config/BotConfig.xml");
+            Kiwana client = new Kiwana("Config/BotConfig.xml");
 
             Task bot = Task.Run(() => client.Work());
 

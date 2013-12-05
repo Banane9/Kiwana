@@ -16,34 +16,101 @@ using System.Xml.Schema;
 
 namespace Kiwana
 {
-    public class Client
+    /// <summary>
+    /// The main Class of the bot.
+    /// </summary>
+    public class Kiwana
     {
-        public bool Initialized = false;
-        public bool Running = true;
+        /// <summary>
+        /// Gets a value indicating whether the bot is running at the moment.
+        /// </summary>
+        public bool Running { get; private set; }
 
+        /// <summary>
+        /// The <see cref="TcpClient"/> for the IRC Server.
+        /// </summary>
         private TcpClient _ircConnection;
+
+        /// <summary>
+        /// The <see cref="NetworkStream"/> of the connection.
+        /// </summary>
         private NetworkStream _networkStream;
+
+        /// <summary>
+        /// The <see cref="StreamReader"/> for the stream.
+        /// </summary>
         private StreamReader _streamReader;
+
+        /// <summary>
+        /// The <see cref="StreamWriter"/> for the stream.
+        /// </summary>
         private StreamWriter _streamWriter;
 
-        public Dictionary<string, Plugin> Plugins = new Dictionary<string, Plugin>();
-        public Dictionary<string, Channel> Channels = new Dictionary<string, Channel>();
-        public Dictionary<string, User> Users = new Dictionary<string, User>();
+        /// <summary>
+        /// Gets a <see cref="Dictionary"/> of plugins that are loaded. Key is the name and value is the plugin class.
+        /// </summary>
+        public Dictionary<string, Plugin> Plugins { get; private set; }
 
+        /// <summary>
+        /// Gets a <see cref="Dictionary"/> for the channels the bot is in. Key is the name and value is the channel class.
+        /// </summary>
+        public Dictionary<string, Channel> Channels { get; private set; }
+
+        /// <summary>
+        /// Gets a <see cref="Dictionary"/> for the users that the bot performed a check on. 
+        /// </summary>
+        public Dictionary<string, User> Users { get; private set; }
+
+        /// <summary>
+        /// Gets a <see cref="Dictionary"/> for the Command aliases. Key is the normalized command and value is the Regex.
+        /// </summary>
+        private Dictionary<string, Regex> _commandRegexes { get; private set; }
+
+        /// <summary>
+        /// A <see cref="Regex"/> containing all the prefixes for commands.
+        /// </summary>
         private Regex _prefixRegex;
-        private Dictionary<string, Regex> _commandRegexes = new Dictionary<string,Regex>();
+
+        /// <summary>
+        /// A <see cref="Regex"/> to check if a command will match a command at all. Contains all the normalized commands and aliases.
+        /// </summary>
         private Regex _commandRegex;
 
+        /// <summary>
+        /// <see cref="Random"/> number generator. Used in for the quit message.
+        /// </summary>
         private Random _random = new Random();
 
-        public DateTime LastSend = new DateTime();
+        /// <summary>
+        /// Gets the <see cref="DateTime"/> when the bot last sent a message to the server. Used for flood control.
+        /// </summary>
+        public DateTime LastSend { get; private set; }
 
+        /// <summary>
+        /// <see cref="XmlSerializer"/> for the config.
+        /// </summary>
         private XmlSerializer _configSerializer = new XmlSerializer(typeof(BotConfig));
-        private XmlSchema _configSchema = new XmlSchema();
-        private string _configFile;
-        private BotConfig _config;
 
-        public Client(string config)
+        /// <summary>
+        /// <see cref="XmlSchema"/> of the config.
+        /// </summary>
+        private XmlSchema _configSchema = new XmlSchema();
+
+        /// <summary>
+        /// The path to the default configFile that was used when the class was constructed.
+        /// </summary>
+        private string _configFile;
+
+        /// <summary>
+        /// Gets the config for the bot.
+        /// </summary>
+        public BotConfig Config { get; private set; }
+
+        /// <summary>
+        /// Initializes a new Instance of the <see cref="Kiwana"/> class. With the configuration from a config file.
+        /// </summary>
+        /// <param name="config">The path to the config file.</param>
+        public Kiwana(string config)
         {
             _configSchema.SourceUri = "Config/BotConfig.xsd";
             _configFile = config;
@@ -51,19 +118,26 @@ namespace Kiwana
             _loadSettings(config);
         }
 
+        /// <summary>
+        /// Loads a config file.
+        /// </summary>
+        /// <param name="config">The path to the config file.</param>
         private void _loadSettings(string config)
         {
             XmlReader reader = XmlReader.Create(config);
             reader.Settings.Schemas.Add(_configSchema);
 
-            _config = (BotConfig)_configSerializer.Deserialize(reader);
+            Config = (BotConfig)_configSerializer.Deserialize(reader);
         }
 
-        public void Init()
+        /// <summary>
+        /// Adds the event handlers for the plugins and calls the methods for loading the plugins and generating the command Regexes.
+        /// </summary>
+        private void _init()
         {
             _loadPlugins();
 
-            _prefixRegex = new Regex(@"(?<=" + Util.JoinStringList(_config.Prefixes, "|") + ").+");
+            _prefixRegex = new Regex(@"(?<=" + Util.JoinStringList(Config.Prefixes, "|") + ").+");
 
             //Add all the listeners to the NewLine event
             NewLine += _handleLine;
@@ -74,15 +148,16 @@ namespace Kiwana
             }
 
             _generateCommandRegexes();
-
-            Initialized = true;
         }
 
+        /// <summary>
+        /// Generates the command Regexes.
+        /// </summary>
         private void _generateCommandRegexes()
         {
             string commandRegex = @"^(";
 
-            foreach (KeyValuePair<string, Command> command in _config.Commands)
+            foreach (KeyValuePair<string, Command> command in Config.Commands)
             {
                 commandRegex += command.Key + "|";
 
@@ -93,18 +168,22 @@ namespace Kiwana
                     commandRegex += aliases + "|";
                     _commandRegexes.Add(command.Key, new Regex("^(" + aliases + ")$"));
                 }
-                
             }
 
             _commandRegex = new Regex(commandRegex.TrimEnd('|') + ")$");
         }
 
+        /// <summary>
+        /// Sends a line to the server.
+        /// </summary>
+        /// <param name="messageType">The type of the message.</param>
+        /// <param name="argument">The rest of the message.</param>
         public void SendData(MessageTypes messageType, string argument = "")
         {
             TimeSpan sinceLastSend = new DateTime() - LastSend;
-            if (sinceLastSend.TotalMilliseconds < _config.MessageInterval)
+            if (sinceLastSend.TotalMilliseconds < Config.MessageInterval)
             {
-                Thread.Sleep((int)_config.MessageInterval - (int)sinceLastSend.TotalMilliseconds);
+                Thread.Sleep((int)Config.MessageInterval - (int)sinceLastSend.TotalMilliseconds);
             }
 
             try
@@ -120,7 +199,7 @@ namespace Kiwana
                     _streamWriter.Flush();
                 }
             }
-            catch (IOException ioEx)
+            catch (IOException)
             {
                 Console.WriteLine("Lost connection to server unexpectedly. Attempting to reconnect.");
                 Running = false;
@@ -136,25 +215,28 @@ namespace Kiwana
             LastSend = new DateTime();
         }
 
+        /// <summary>
+        /// Connects to the server specified in the config.
+        /// </summary>
         private void _connect()
         {
-            Console.WriteLine("Trying to establish Connection to " + _config.Server.Url + ":" + _config.Server.Port + " ... ");
-            Console.WriteLine("Kiwana: Connecting ...");
+            Console.WriteLine("Trying to establish Connection to " + Config.Server.Url + ":" + Config.Server.Port + " ... ");
+            Console.Title = "Kiwana: Connecting ...";
             try
             {
-                _ircConnection = new TcpClient(_config.Server.Url, _config.Server.Port);
+                _ircConnection = new TcpClient(Config.Server.Url, Config.Server.Port);
                 _networkStream = _ircConnection.GetStream();
                 _streamReader = new StreamReader(_networkStream);
                 _streamWriter = new StreamWriter(_networkStream);
 
-                SendData(MessageTypes.PASS, _config.Server.Login.Password);
-                SendData(MessageTypes.NICK, _config.Server.Login.Nick);
-                SendData(MessageTypes.USER, _config.Server.Login.Nick + " Owner Banane9 :" + _config.Server.Login.Name);
+                SendData(MessageTypes.PASS, Config.Server.Login.Password);
+                SendData(MessageTypes.NICK, Config.Server.Login.Nick);
+                SendData(MessageTypes.USER, Config.Server.Login.Nick + " Owner Banane9 :" + Config.Server.Login.Name);
 
                 Console.WriteLine("Success");
                 Running = true;
 
-                Console.Title = _config.Server.Login.Nick + " on " + _config.Server.Name;
+                Console.Title = Config.Server.Login.Nick + " on " + Config.Server.Name;
             }
             catch
             {
@@ -165,12 +247,13 @@ namespace Kiwana
             }
         }
 
+        /// <summary>
+        /// The work method. Waits for a line from the server and then calls ParseLine to process it. To be run inside its own thread.
+        /// </summary>
+        /// <returns>Returns a Task so it can be run as a separate Thread.</returns>
         public async Task Work()
         {
-            if (!Initialized)
-            {
-                Init();
-            }
+            _init();
 
             _connect();
             
@@ -181,9 +264,11 @@ namespace Kiwana
                     string line = _streamReader.ReadLine();
 
                     if (!string.IsNullOrEmpty(line))
+                    {
                         ParseLine(line);
+                    }
                 }
-                catch (IOException ioEx)
+                catch (IOException)
                 {
                     Console.WriteLine("Lost connection to server unexpectedly. Attempting to reconnect.");
                     Running = false;
@@ -197,6 +282,11 @@ namespace Kiwana
             }
         }
 
+        /// <summary>
+        /// Makes the alias of a command or the command into the normalized command.
+        /// </summary>
+        /// <param name="cmd">The command to be normalized.</param>
+        /// <returns>The normalized command.</returns>
         public string GetNormalizedCommand(string cmd)
         {
             string command = "";
@@ -204,7 +294,7 @@ namespace Kiwana
             //Is it a valid command from the console or from the server
             if (_commandRegex.IsMatch(cmd))
             {
-                foreach (KeyValuePair<string, Command> commandToCheck in _config.Commands)
+                foreach (KeyValuePair<string, Command> commandToCheck in Config.Commands)
                 {
                     if (cmd == commandToCheck.Key)
                     {
@@ -219,7 +309,7 @@ namespace Kiwana
                             command = commandToCheck.Key;
                         }
 
-                        if (!String.IsNullOrEmpty(command)) break;
+                        if (!String.IsNullOrEmpty(command)) { break; }
                     }
                 }
             }
@@ -227,12 +317,17 @@ namespace Kiwana
             return command;
         }
 
+        /// <summary>
+        /// Parses the line received from server for content the bot has to handle before passing it to the NewLine event.
+        /// </summary>
+        /// <param name="line">The line from the server.</param>
+        /// <param name="console">Whether it came from the console.</param>
         public void ParseLine(string line, bool console = false)
         {
             //Console.WriteLine(line);
             List<string> ex = line.Split(' ').ToList();
 
-            if (ex.Count < 2) return;
+            if (ex.Count < 2) { return; }
 
             if (!console)
             {
@@ -277,22 +372,20 @@ namespace Kiwana
                 {
                     if (ex[1] == "NOTICE" && ex[4] == "ACC")
                     {
-                        if (Util.HostMaskRegex.Match(ex[0]).Value.ToLower() == _config.Permissions.Authenticator.HostMask.ToLower())
+                        if (Util.HostMaskRegex.Match(ex[0]).Value.ToLower() == Config.Permissions.Authenticator.HostMask.ToLower())
                         {
                             string nick = Util.MessageRegex.Match(ex[3]).Value;
-                            //Status = ex[5]
-
+                            
                             if (Users.ContainsKey(nick))
                             {
                                 if (Users[nick].AuthenticationRequested)
                                 {
                                     Users[nick].AuthenticationRequested = false;
 
-                                    if (ex[_config.Permissions.Authenticator.MessagePosition] == _config.Permissions.Authenticator.AuthenticationCode)
+                                    if (ex[Config.Permissions.Authenticator.MessagePosition] == Config.Permissions.Authenticator.AuthenticationCode)
                                     {
-                                        Users[nick].Authenticated = true;
-
-                                        foreach (UserGroup group in _config.Permissions.UserGroups)
+                                        Users[nick].Rank = Config.Permissions.DefaultRank;
+                                        foreach (UserGroup group in Config.Permissions.UserGroups)
                                         {
                                             if (group.Users.Contains(nick))
                                             {
@@ -311,7 +404,7 @@ namespace Kiwana
                             }
                         }
                     }
-                    else if (Util.ServerRegex.IsMatch(ex[0]) && ex[2] == _config.Server.Login.Nick && !Util.MessageRegex.IsMatch(ex[4]))
+                    else if (Util.ServerRegex.IsMatch(ex[0]) && ex[2] == Config.Server.Login.Nick && !Util.MessageRegex.IsMatch(ex[4]))
                     {
                         if (Channels.ContainsKey(ex[3].ToLower()))
                         {
@@ -332,9 +425,9 @@ namespace Kiwana
 
                 if (ex.Count == 5)
                 {
-                    if (ex[1] == "MODE" && ex[4] == _config.Server.Login.Nick)
+                    if (ex[1] == "MODE" && ex[4] == Config.Server.Login.Nick)
                     {
-                        Console.WriteLine(Util.NickRegex.Match(ex[0]).Value + " set mode of " + _config.Server.Login.Nick + " in " + ex[2] + " to " + ex[3]);
+                        Console.WriteLine(Util.NickRegex.Match(ex[0]).Value + " set mode of " + Config.Server.Login.Nick + " in " + ex[2] + " to " + ex[3]);
                     }
                 }
 
@@ -410,7 +503,6 @@ namespace Kiwana
                         Console.WriteLine(Util.NickRegex.Match(ex[0]).Value + " left the server.");
                     }
                 }
-
             }
 
             if (ex.Count > 3 || console)
@@ -446,7 +538,7 @@ namespace Kiwana
 
                     string recipient = ex[2];
 
-                    if (ex[2] == _config.Server.Login.Nick)
+                    if (ex[2] == Config.Server.Login.Nick)
                     {
                         recipient = Util.NickRegex.Match(ex[0]).Value;
                     }
@@ -462,7 +554,7 @@ namespace Kiwana
 
                     if (!string.IsNullOrEmpty(normalizedCommand) && !console)
                     {
-                        int rank = _config.Commands[normalizedCommand].Rank;
+                        int rank = Config.Commands[normalizedCommand].Rank;
 
                         authorized = Users[nick].Rank >= rank;
 
@@ -477,19 +569,32 @@ namespace Kiwana
             }
         }
 
+        /// <summary>
+        /// Sends a message to the Authentication service specified in the config requesting the status for a User.
+        /// TODO: Add option to disable authentication and make the message format more modular.
+        /// </summary>
+        /// <param name="nick">The nick of the user to check on.</param>
         private void _requestAuthentication(string nick)
         {
             if (!Users.ContainsKey(nick))
             {
-                Users.Add(nick, new User(rank: _config.Permissions.DefaultRank));
+                Users.Add(nick, new User());
             }
 
             Users[nick].AuthenticationRequested = true;
 
             //Request Authentication
-            SendData(MessageTypes.PRIVMSG, Util.NickRegex.Match(_config.Permissions.Authenticator.HostMask).Value + " :ACC " + nick);
+            SendData(MessageTypes.PRIVMSG, Util.NickRegex.Match(Config.Permissions.Authenticator.HostMask).Value + " :ACC " + nick);
         }
 
+        /// <summary>
+        /// The bot internal method that gets called from the NewLine event.
+        /// </summary>
+        /// <param name="ex">The line from the server, split at spaces.</param>
+        /// <param name="recipient">The channel or user the message came from. Empty when from console.</param>
+        /// <param name="command">The normalized command. Empty if there's no command.</param>
+        /// <param name="userAuthorized">Whether the user sending the command is authorized. False if there's no command.</param>
+        /// <param name="console">Whether the line came from the console.</param>
         private void _handleLine(List<string> ex, string recipient, string command, bool userAuthorized, bool console)
         {
             if (userAuthorized)
@@ -510,14 +615,15 @@ namespace Kiwana
                                         Channels.Add(channel.ToLower(), new Channel());
                                     }
                                 }
+
                                 break;
                             case "about":
-                                SendData(MessageTypes.PRIVMSG, recipient + " :" + _config.About);
+                                SendData(MessageTypes.PRIVMSG, recipient + " :" + Config.About);
                                 break;
                             case "help":
                                 string help = "Available commands are: ";
-                                help += Util.JoinStringList(_config.Commands.Keys.ToList(), ", ");
-                                help += " . With prefixes: " + Util.JoinStringList(_config.Prefixes, ", ") + " .";
+                                help += Util.JoinStringList(Config.Commands.Keys.ToList(), ", ");
+                                help += " . With prefixes: " + Util.JoinStringList(Config.Prefixes, ", ") + " .";
                                 SendData(MessageTypes.PRIVMSG, recipient + " :" + help.Replace("\\", ""));
                                 break;
                             case "letmegooglethatforyou":
@@ -525,7 +631,7 @@ namespace Kiwana
                                 break;
                             case "nick":
                                 SendData(MessageTypes.NICK, Util.JoinStringList(ex, "_", 4));
-                                _config.Server.Login.Nick = Util.JoinStringList(ex, "_", 4);
+                                Config.Server.Login.Nick = Util.JoinStringList(ex, "_", 4);
                                 break;
                             case "part":
                                 SendData(MessageTypes.PART, Util.JoinStringList(ex, ",", 4));
@@ -537,6 +643,7 @@ namespace Kiwana
                                         Channels.Remove(channel);
                                     }
                                 }
+
                                 break;
                             case "reload":
                                 switch (ex[4].ToLower())
@@ -555,6 +662,7 @@ namespace Kiwana
                                             SendData(MessageTypes.PRIVMSG, recipient + " :Reloading config from default config file.");
                                             ReloadConfig();
                                         }
+
                                         SendData(MessageTypes.PRIVMSG, recipient + " :Done!");
                                         break;
                                     case "plugins":
@@ -563,6 +671,7 @@ namespace Kiwana
                                         SendData(MessageTypes.PRIVMSG, recipient + " :Done!");
                                         break;
                                 }
+
                                 break;
                             case "quit":
                                 Quit(Util.JoinStringList(ex, " ", 4));
@@ -574,12 +683,12 @@ namespace Kiwana
                         switch (command)
                         {
                             case "about":
-                                SendData(MessageTypes.PRIVMSG, recipient + " :" + _config.About);
+                                SendData(MessageTypes.PRIVMSG, recipient + " :" + Config.About);
                                 break;
                             case "help":
                                 string help = "Available commands are: ";
-                                help += Util.JoinStringList(_config.Commands.Keys.ToList(), ", ");
-                                help += "; With prefixes: " + Util.JoinStringList(_config.Prefixes, ", ");
+                                help += Util.JoinStringList(Config.Commands.Keys.ToList(), ", ");
+                                help += "; With prefixes: " + Util.JoinStringList(Config.Prefixes, ", ");
                                 SendData(MessageTypes.PRIVMSG, recipient + " :" + help.Replace("\\", ""));
                                 break;
                             case "plugins":
@@ -594,6 +703,7 @@ namespace Kiwana
                                 {
                                     Channels.Remove(ex[2]);
                                 }
+
                                 break;
                             case "reload":
                                 SendData(MessageTypes.PRIVMSG, recipient + " :Reloading plugins and config from default config file.");
@@ -610,13 +720,17 @@ namespace Kiwana
             }
         }
 
+        /// <summary>
+        /// Makes the bot quit from the server and stops it.
+        /// </summary>
+        /// <param name="message">Optional quit message. If empty, a random one from the config will be used.</param>
         private void Quit(string message = "")
         {
             Running = false;
 
             if (string.IsNullOrEmpty(message))
             {
-                SendData(MessageTypes.QUIT, ":" + _config.QuitMessages[_random.Next(0, _config.QuitMessages.Count - 1)]);
+                SendData(MessageTypes.QUIT, ":" + Config.QuitMessages[_random.Next(0, Config.QuitMessages.Count - 1)]);
             }
             else
             {
@@ -628,6 +742,10 @@ namespace Kiwana
             Console.WriteLine("Bot stopped.");
         }
 
+        /// <summary>
+        /// Reloads the config from a config file.
+        /// </summary>
+        /// <param name="config">The path to the config file. If empty, the one it was constructed with is used.</param>
         public void ReloadConfig(string config = "")
         {
             if (string.IsNullOrEmpty(config))
@@ -640,18 +758,24 @@ namespace Kiwana
             }
         }
 
+        /// <summary>
+        /// Reloads the plugins.
+        /// </summary>
         public void ReloadPlugins()
         {
             _unloadPlugins();
             _loadPlugins();
         }
 
+        /// <summary>
+        /// Loads the plugins from the plugin folders in the config.
+        /// </summary>
         private void _loadPlugins()
         {
             Console.WriteLine("Loading Plugins ...");
 
             Plugins.Clear();
-            foreach (string pluginFolder in _config.PluginFolders)
+            foreach (string pluginFolder in Config.PluginFolders)
             {
                 Plugins.AddRange(PluginManager.ScanPluginFolder(pluginFolder));
             }
@@ -672,6 +796,9 @@ namespace Kiwana
             }
         }
 
+        /// <summary>
+        /// Unloads the plugins that were loaded.
+        /// </summary>
         private void _unloadPlugins()
         {
             Console.WriteLine("Disabling plugins ...");
@@ -683,8 +810,19 @@ namespace Kiwana
             }
         }
 
+        /// <summary>
+        /// The delegate for the NewLine event.
+        /// </summary>
+        /// <param name="ex">The line from the server, split at spaces.</param>
+        /// <param name="recipient">The channel or user the message came from. Empty when from console.</param>
+        /// <param name="command">The normalized command. Empty if there's no command.</param>
+        /// <param name="userAuthorized">Whether the user sending the command is authorized. False if there's no command.</param>
+        /// <param name="console">Whether the line came from the console.</param>
         public delegate void NewLineHandler(List<string> ex, string recipient, string command, bool userAuthorized, bool console);
 
+        /// <summary>
+        /// The NewLine event. Fires when the bot receives a new line from the server that contains a message sent from a user.
+        /// </summary>
         public event NewLineHandler NewLine;
     }
 }

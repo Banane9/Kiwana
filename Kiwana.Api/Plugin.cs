@@ -33,11 +33,11 @@ namespace Kiwana.Api
         /// <summary>
         /// This method gets called every time the bot receives a line.
         /// </summary>
-        /// <param name="ex">The List of strings resulting from splitting the input line at ' '.</param>
-        /// <param name="recipient">What to send the response to.</param>
-        /// <param name="command">The command will be matched to the name specified in the config (in lower case).</param>
-        /// <param name="userAuthorized">Whether the user is authorized to execute the command or not. If there's no command it's false too.</param>
-        /// <param name="console">Whether the command was issued from the console or not.</param>
+        /// <param name="ex">The line from the server, split at spaces.</param>
+        /// <param name="recipient">The channel or user the message came from. Empty when from console.</param>
+        /// <param name="command">The normalized command. Empty if there's no command.</param>
+        /// <param name="userAuthorized">Whether the user sending the command is authorized. False if there's no command.</param>
+        /// <param name="console">Whether the line came from the console.</param>
         public virtual void HandleLine(List<string> ex, string recipient, string command, bool userAuthorized, bool console)
         {
             return;

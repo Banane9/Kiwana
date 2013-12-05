@@ -1,17 +1,28 @@
 ﻿namespace Kiwana.Objects
 {
+    /// <summary>
+    /// Stores information about a user that the bot performed a check on.
+    /// </summary>
     public class User
     {
+        /// <summary>
+        /// The rank of the user.
+        /// </summary>
         public int Rank { get; set; }
 
-        public bool Authenticated { get; set; }
-
+        /// <summary>
+        /// Has the authentication of the user been requested by the bot?
+        /// </summary>
         public bool AuthenticationRequested { get; set; }
 
-        public User(int rank = 0, bool authenticated = false, bool authenticationRequested = false)
+        /// <summary>
+        /// Initializes a new instance of the <see cref="User"/> class.
+        /// </summary>
+        /// <param name="rank">The rank of the user. Default is the <see cref="int"/>.MinValue</param>
+        /// <param name="authenticationRequested">Whether the authentication of the user has been requested.</param>
+        public User(int rank = int.MinValue, bool authenticationRequested = false)
         {
             Rank = rank;
-            Authenticated = authenticated;
             AuthenticationRequested = authenticationRequested;
         }
     }
